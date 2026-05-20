@@ -15,7 +15,8 @@ namespace UnitySkills
             Tags = new[] { "model", "import", "settings", "fbx" },
             Outputs = new[] { "globalScale", "meshCompression", "animationType", "materialImportMode" },
             RequiresInput = new[] { "assetPath" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ModelGetSettings(string assetPath)
         {
             if (Validate.Required(assetPath, "assetPath") is object err) return err;
@@ -303,7 +304,8 @@ namespace UnitySkills
             Category = SkillCategory.Model, Operation = SkillOperation.Query,
             Tags = new[] { "model", "search", "find", "asset" },
             Outputs = new[] { "totalFound", "models" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ModelFindAssets(string filter = "", int limit = 50)
         {
             var guids = AssetDatabase.FindAssets("t:Model " + filter);
@@ -320,7 +322,8 @@ namespace UnitySkills
             Tags = new[] { "mesh", "vertices", "triangles", "geometry" },
             Outputs = new[] { "vertexCount", "triangles", "subMeshCount", "bounds", "blendShapeCount" },
             RequiresInput = new[] { "gameObject|assetPath" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ModelGetMeshInfo(string name = null, int instanceId = 0, string path = null, string assetPath = null)
         {
             Mesh mesh = null;
@@ -354,7 +357,8 @@ namespace UnitySkills
             Tags = new[] { "model", "material", "mapping", "inspect" },
             Outputs = new[] { "materialCount", "materials", "meshCount", "meshes" },
             RequiresInput = new[] { "assetPath" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ModelGetMaterialsInfo(string assetPath)
         {
             if (Validate.Required(assetPath, "assetPath") is object err) return err;
@@ -373,7 +377,8 @@ namespace UnitySkills
             Tags = new[] { "model", "animation", "clip", "inspect" },
             Outputs = new[] { "importAnimation", "clipCount", "clips", "clipDefinitions" },
             RequiresInput = new[] { "assetPath" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ModelGetAnimationsInfo(string assetPath)
         {
             if (Validate.Required(assetPath, "assetPath") is object err) return err;
@@ -433,7 +438,8 @@ namespace UnitySkills
             Tags = new[] { "model", "rig", "skeleton", "avatar" },
             Outputs = new[] { "animationType", "avatarSetup", "sourceAvatar", "isHuman" },
             RequiresInput = new[] { "assetPath" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ModelGetRigInfo(string assetPath)
         {
             if (Validate.Required(assetPath, "assetPath") is object err) return err;

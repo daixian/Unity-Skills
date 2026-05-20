@@ -108,7 +108,8 @@ namespace UnitySkills
             Category = SkillCategory.Workflow, Operation = SkillOperation.Query,
             Tags = new[] { "bookmark", "list", "overview" },
             Outputs = new[] { "count", "bookmarks" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object BookmarkList()
         {
             var list = _bookmarks.Select(kv => new
@@ -175,7 +176,8 @@ namespace UnitySkills
             Category = SkillCategory.Workflow, Operation = SkillOperation.Query,
             Tags = new[] { "undo", "history", "current", "group" },
             Outputs = new[] { "currentGroup", "groupIndex" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object HistoryGetCurrent()
         {
             return new
@@ -253,7 +255,8 @@ namespace UnitySkills
             Category = SkillCategory.Workflow, Operation = SkillOperation.Query,
             Tags = new[] { "workflow", "history", "list", "task" },
             Outputs = new[] { "count", "history" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object WorkflowList()
         {
             var history = WorkflowManager.History;
@@ -303,7 +306,8 @@ namespace UnitySkills
             Category = SkillCategory.Workflow, Operation = SkillOperation.Query,
             Tags = new[] { "undo", "redo", "list", "history" },
             Outputs = new[] { "count", "undoneStack" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object WorkflowUndoneList()
         {
             var undoneStack = WorkflowManager.GetUndoneStack();
@@ -431,7 +435,8 @@ namespace UnitySkills
             Category = SkillCategory.Workflow, Operation = SkillOperation.Query,
             Tags = new[] { "session", "list", "history", "conversation" },
             Outputs = new[] { "count", "currentSessionId", "sessions" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object WorkflowSessionList()
         {
             var sessions = WorkflowManager.GetSessions();
@@ -456,7 +461,8 @@ namespace UnitySkills
             Category = SkillCategory.Workflow, Operation = SkillOperation.Query,
             Tags = new[] { "session", "status", "current", "recording" },
             Outputs = new[] { "hasActiveSession", "currentSessionId", "isRecording", "currentTaskId" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object WorkflowSessionStatus()
         {
             return new
@@ -476,7 +482,8 @@ namespace UnitySkills
             Category = SkillCategory.Workflow, Operation = SkillOperation.Analyze,
             Tags = new[] { "workflow", "plan", "preview", "multi-skill", "aggregate" },
             Outputs = new[] { "totalSteps", "totalRisk", "steps", "dependencies", "warnings" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object WorkflowPlan(string skillsJson)
         {
             if (string.IsNullOrWhiteSpace(skillsJson))

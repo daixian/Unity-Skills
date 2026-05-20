@@ -16,7 +16,7 @@ namespace UnitySkills
             Tags = new[] { "import", "copy", "external" },
             Outputs = new[] { "imported", "assetPath" },
             TracksWorkflow = true,
-            MutatesAssets = true, RiskLevel = "medium")]
+            MutatesAssets = true, RiskLevel = "high")]
         public static object AssetImport(string sourcePath, string destinationPath)
         {
             bool isDir = Directory.Exists(sourcePath);
@@ -315,7 +315,8 @@ namespace UnitySkills
             Category = SkillCategory.Asset, Operation = SkillOperation.Query,
             Tags = new[] { "search", "filter", "database" },
             Outputs = new[] { "count", "assets", "assetPath" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object AssetFind(string searchFilter, int limit = 50)
         {
             var guids = AssetDatabase.FindAssets(searchFilter);
@@ -382,7 +383,8 @@ namespace UnitySkills
             Tags = new[] { "info", "metadata", "inspect" },
             Outputs = new[] { "assetPath", "name", "type", "guid", "labels" },
             RequiresInput = new[] { "assetPath" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object AssetGetInfo(string assetPath)
         {
             var asset = AssetDatabase.LoadMainAssetAtPath(assetPath);

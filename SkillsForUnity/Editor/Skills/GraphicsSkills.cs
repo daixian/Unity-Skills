@@ -16,7 +16,8 @@ namespace UnitySkills
             Category = SkillCategory.Graphics, Operation = SkillOperation.Query,
             Tags = new[] { "graphics", "quality", "render pipeline", "settings", "overview" },
             Outputs = new[] { "currentQuality", "defaultRenderPipeline", "currentRenderPipeline", "alwaysIncludedShaderCount", "shaderStripping" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object GraphicsGetOverview()
         {
             var graphicsSettings = RenderPipelineSkillsCommon.GetGraphicsSettingsObject();
@@ -54,7 +55,8 @@ namespace UnitySkills
             Category = SkillCategory.Graphics, Operation = SkillOperation.Query,
             Tags = new[] { "graphics", "quality", "settings", "levels" },
             Outputs = new[] { "currentLevel", "currentName", "levels" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object GraphicsGetQualitySettings()
         {
             var currentLevel = QualitySettings.GetQualityLevel();
@@ -111,7 +113,8 @@ namespace UnitySkills
             Category = SkillCategory.Graphics, Operation = SkillOperation.Query,
             Tags = new[] { "graphics", "render pipeline", "assets", "quality" },
             Outputs = new[] { "defaultRenderPipeline", "currentRenderPipeline", "qualityLevels" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object GraphicsGetRenderPipelineAssets()
         {
             var qualityLevels = QualitySettings.names
@@ -211,7 +214,8 @@ namespace UnitySkills
             Category = SkillCategory.Graphics, Operation = SkillOperation.Query,
             Tags = new[] { "graphics", "shader", "always included", "list" },
             Outputs = new[] { "count", "shaders" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object GraphicsListAlwaysIncludedShaders()
         {
             var graphicsSettings = RenderPipelineSkillsCommon.GetGraphicsSettingsObject();
@@ -319,7 +323,8 @@ namespace UnitySkills
             Category = SkillCategory.Graphics, Operation = SkillOperation.Query,
             Tags = new[] { "graphics", "shader", "stripping", "settings" },
             Outputs = new[] { "lightmap", "fog", "instancing" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object GraphicsGetShaderStripping()
         {
             var graphicsSettings = RenderPipelineSkillsCommon.GetGraphicsSettingsObject();

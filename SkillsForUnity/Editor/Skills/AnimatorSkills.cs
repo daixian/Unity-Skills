@@ -106,7 +106,8 @@ namespace UnitySkills
             Tags = new[] { "animator", "parameter", "list", "controller" },
             Outputs = new[] { "controller", "parameters" },
             RequiresInput = new[] { "animatorController" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object AnimatorGetParameters(string controllerPath)
         {
             var pathErr = Validate.SafePath(controllerPath, "controllerPath");
@@ -187,7 +188,8 @@ namespace UnitySkills
             Tags = new[] { "animator", "info", "inspect", "controller" },
             Outputs = new[] { "gameObject", "instanceId", "hasController", "controllerPath", "speed", "layerCount", "parameterCount" },
             RequiresInput = new[] { "gameObject" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object AnimatorGetInfo(string name = null, int instanceId = 0, string path = null)
         {
             var (animator, error) = GameObjectFinder.FindComponentOrError<Animator>(name, instanceId, path);
@@ -248,7 +250,8 @@ namespace UnitySkills
             Tags = new[] { "animator", "state", "list", "layer" },
             Outputs = new[] { "controller", "layer", "layerName", "stateCount", "states" },
             RequiresInput = new[] { "animatorController" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object AnimatorListStates(string controllerPath, int layer = 0)
         {
             var pathErr = Validate.SafePath(controllerPath, "controllerPath");

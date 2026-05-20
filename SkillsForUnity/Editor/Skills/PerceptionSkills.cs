@@ -506,7 +506,8 @@ namespace UnitySkills
             Category = SkillCategory.Perception, Operation = SkillOperation.Analyze,
             Tags = new[] { "scene", "components", "statistics", "overview" },
             Outputs = new[] { "sceneName", "stats", "keyFacilities", "topComponents" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object SceneComponentStats(int topComponentsLimit = 15)
         {
             var metrics = CollectSceneMetrics(includeComponentStats: true);
@@ -552,7 +553,8 @@ namespace UnitySkills
             Category = SkillCategory.Perception, Operation = SkillOperation.Analyze,
             Tags = new[] { "scene", "hotspots", "hierarchy", "diagnostics" },
             Outputs = new[] { "sceneName", "hotspotCount", "hotspots" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object SceneFindHotspots(int deepHierarchyThreshold = 8, int largeChildCountThreshold = 25, int maxResults = 20)
         {
             var metrics = CollectSceneMetrics(includeComponentStats: false);
@@ -585,7 +587,8 @@ namespace UnitySkills
             Category = SkillCategory.Perception, Operation = SkillOperation.Analyze,
             Tags = new[] { "scene", "health", "validation", "diagnostics" },
             Outputs = new[] { "sceneName", "summary", "findings", "hotspots", "suggestedNextSkills" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object SceneHealthCheck(int issueLimit = 100, int deepHierarchyThreshold = 8, int largeChildCountThreshold = 25)
         {
             var metrics = CollectSceneMetrics(includeComponentStats: false);
@@ -726,7 +729,8 @@ namespace UnitySkills
             Category = SkillCategory.Perception, Operation = SkillOperation.Analyze,
             Tags = new[] { "scene", "contract", "convention", "validation" },
             Outputs = new[] { "sceneName", "summary", "findings", "checkedRoots" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object SceneContractValidate(
             string requiredRootsJson = null,
             string requiredTagsJson = null,
@@ -861,7 +865,8 @@ namespace UnitySkills
             Category = SkillCategory.Perception, Operation = SkillOperation.Analyze,
             Tags = new[] { "project", "stack", "detect", "pipeline", "packages" },
             Outputs = new[] { "unityVersion", "renderPipeline", "ui", "input", "packages", "projectProfile" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ProjectStackDetect()
         {
             var metrics = CollectSceneMetrics(includeComponentStats: true);
@@ -942,7 +947,8 @@ namespace UnitySkills
             Category = SkillCategory.Perception, Operation = SkillOperation.Analyze,
             Tags = new[] { "scene", "analyze", "overview", "context", "recommendations" },
             Outputs = new[] { "summary", "stats", "findings", "recommendations", "suggestedNextSkills" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object SceneAnalyze(int topComponentsLimit = 10, int issueLimit = 100, int deepHierarchyThreshold = 8, int largeChildCountThreshold = 25)
         {
             var metrics = CollectSceneMetrics(includeComponentStats: true);
@@ -998,7 +1004,8 @@ namespace UnitySkills
             Category = SkillCategory.Perception, Operation = SkillOperation.Analyze,
             Tags = new[] { "scene", "summary", "statistics", "overview" },
             Outputs = new[] { "sceneName", "scenePath", "stats", "topComponents" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object SceneSummarize(bool includeComponentStats = true, int topComponentsLimit = 10)
         {
             var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
@@ -1074,7 +1081,8 @@ namespace UnitySkills
             Category = SkillCategory.Perception, Operation = SkillOperation.Query,
             Tags = new[] { "hierarchy", "tree", "scene", "structure" },
             Outputs = new[] { "sceneName", "hierarchy", "totalObjectsShown" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object HierarchyDescribe(int maxDepth = 5, bool includeInactive = false, int maxItemsPerLevel = 20)
         {
             var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
@@ -1214,7 +1222,8 @@ namespace UnitySkills
             Tags = new[] { "script", "analyze", "api", "reflection" },
             Outputs = new[] { "script", "fullName", "kind", "fields", "properties", "methods", "unityCallbacks" },
             RequiresInput = new[] { "scriptName" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ScriptAnalyze(string scriptName, bool includePrivate = false)
         {
             var type = SkillsCommon.GetAllLoadedTypes()
@@ -1294,7 +1303,8 @@ namespace UnitySkills
             Category = SkillCategory.Perception, Operation = SkillOperation.Query,
             Tags = new[] { "spatial", "radius", "proximity", "search" },
             Outputs = new[] { "center", "radius", "totalFound", "results" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object SceneSpatialQuery(
             float x = 0, float y = 0, float z = 0,
             float radius = 10f,
@@ -1361,7 +1371,8 @@ namespace UnitySkills
             Category = SkillCategory.Perception, Operation = SkillOperation.Query,
             Tags = new[] { "material", "shader", "scene", "overview" },
             Outputs = new[] { "totalMaterials", "totalShaders", "shaders" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object SceneMaterials(bool includeProperties = false)
         {
             var renderers = FindHelper.FindAll<Renderer>();
@@ -1441,7 +1452,8 @@ namespace UnitySkills
             Category = SkillCategory.Perception, Operation = SkillOperation.Analyze,
             Tags = new[] { "scene", "context", "snapshot", "comprehensive", "ai" },
             Outputs = new[] { "sceneName", "totalObjects", "exportedObjects", "objects", "references", "codeDependencies" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object SceneContext(
             int maxDepth = 10,
             int maxObjects = 200,
@@ -2331,7 +2343,8 @@ namespace UnitySkills
             Category = SkillCategory.Perception, Operation = SkillOperation.Analyze,
             Tags = new[] { "dependency", "impact", "reference", "analysis", "graph" },
             Outputs = new[] { "sceneName", "totalReferences", "objectsAnalyzed", "analysis", "markdown" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object SceneDependencyAnalyze(
             string targetPath = null,
             string savePath = null)
@@ -2410,7 +2423,8 @@ namespace UnitySkills
             Tags = new[] { "script", "dependency", "graph", "closure", "analysis" },
             Outputs = new[] { "entryScript", "totalScriptsReached", "scripts", "edges", "suggestedReadOrder" },
             RequiresInput = new[] { "scriptName" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ScriptDependencyGraph(
             string scriptName,
             int maxHops = 2,
@@ -2731,7 +2745,8 @@ namespace UnitySkills
             Category = SkillCategory.Perception, Operation = SkillOperation.Analyze,
             Tags = new[] { "tag", "layer", "statistics", "usage" },
             Outputs = new[] { "totalObjects", "untaggedCount", "tags", "layers", "emptyDefinedLayers" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object SceneTagLayerStats()
         {
             var allObjects = GameObjectFinder.GetSceneObjects();
@@ -2770,7 +2785,8 @@ namespace UnitySkills
             Category = SkillCategory.Perception, Operation = SkillOperation.Analyze,
             Tags = new[] { "performance", "optimization", "diagnostics", "hints" },
             Outputs = new[] { "hintCount", "hints" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ScenePerformanceHints()
         {
             var hints = new List<object>();
@@ -2826,7 +2842,8 @@ namespace UnitySkills
             Category = SkillCategory.Perception, Operation = SkillOperation.Analyze,
             Tags = new[] { "scene", "diff", "compare", "before-after", "changes", "snapshot" },
             Outputs = new[] { "mode", "snapshot", "added", "removed", "modified", "summary" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object SceneDiff(string snapshotJson = null)
         {
             if (string.IsNullOrWhiteSpace(snapshotJson))

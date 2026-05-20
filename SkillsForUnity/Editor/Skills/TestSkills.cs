@@ -56,7 +56,8 @@ namespace UnitySkills
             Tags = new[] { "test", "result", "status", "poll", "job" },
             Outputs = new[] { "jobId", "status", "totalTests", "passedTests", "failedTests", "skippedTests", "inconclusiveTests", "otherTests", "failedTestNames" },
             RequiresInput = new[] { "jobId" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object TestGetResult(string jobId)
         {
             if (Validate.Required(jobId, "jobId") is object err)
@@ -88,7 +89,8 @@ namespace UnitySkills
             Category = SkillCategory.Test, Operation = SkillOperation.Query,
             Tags = new[] { "test", "list", "discover", "enumerate" },
             Outputs = new[] { "testMode", "count", "tests", "pendingDiscovery", "discoveryJobId", "discoveryStatus" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object TestList(string testMode = "EditMode", int limit = 100)
         {
             var discovery = GetLatestCompletedDiscovery(testMode);
@@ -151,7 +153,8 @@ namespace UnitySkills
             Tags = new[] { "test", "discover", "result", "poll", "job" },
             Outputs = new[] { "jobId", "status", "count", "tests" },
             RequiresInput = new[] { "jobId" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object TestDiscoverGetResult(string jobId, int limit = 100)
         {
             if (Validate.Required(jobId, "jobId") is object err)
@@ -238,7 +241,8 @@ namespace UnitySkills
             Category = SkillCategory.Test, Operation = SkillOperation.Query,
             Tags = new[] { "test", "result", "last", "recent" },
             Outputs = new[] { "jobId", "status", "total", "passed", "failed", "skipped", "inconclusive", "other", "failedNames" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object TestGetLastResult()
         {
             var last = EnumerateRealTestRuns(100)
@@ -266,7 +270,8 @@ namespace UnitySkills
             Category = SkillCategory.Test, Operation = SkillOperation.Query,
             Tags = new[] { "test", "categories", "list", "nunit" },
             Outputs = new[] { "count", "categories", "pendingDiscovery", "discoveryJobId", "discoveryStatus" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object TestListCategories(string testMode = "EditMode")
         {
             var discovery = GetLatestCompletedDiscovery(testMode);
@@ -308,7 +313,8 @@ namespace UnitySkills
             Category = SkillCategory.Test, Operation = SkillOperation.Analyze,
             Tags = new[] { "test", "smoke", "skills", "regression", "coverage" },
             Outputs = new[] { "totalSkills", "executedCount", "dryRunCount", "failureCount", "results" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object TestSmokeSkills(
             string category = null,
             string nameContains = null,
@@ -557,7 +563,8 @@ public class {testName}
             Category = SkillCategory.Test, Operation = SkillOperation.Query,
             Tags = new[] { "test", "summary", "aggregate", "report" },
             Outputs = new[] { "totalRuns", "completedRuns", "totalPassed", "totalFailed", "totalSkipped", "totalInconclusive", "totalOther", "allFailedTests" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object TestGetSummary()
         {
             var runs = EnumerateRealTestRuns(200).ToList();

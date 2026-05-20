@@ -34,7 +34,8 @@ namespace UnitySkills
             Category = SkillCategory.NavMesh, Operation = SkillOperation.Query,
             Tags = new[] { "navmesh", "path", "pathfinding", "navigation" },
             Outputs = new[] { "status", "valid", "distance", "cornerCount", "corners" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object NavMeshCalculatePath(
             float startX, float startY, float startZ,
             float endX, float endY, float endZ,
@@ -156,7 +157,8 @@ namespace UnitySkills
             Category = SkillCategory.NavMesh, Operation = SkillOperation.Query,
             Tags = new[] { "navmesh", "sample", "nearest", "position" },
             Outputs = new[] { "success", "found", "point", "distance" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object NavMeshSamplePosition(float x, float y, float z, float maxDistance = 10f)
         {
             var sourcePos = new Vector3(x, y, z);
@@ -181,7 +183,8 @@ namespace UnitySkills
             Category = SkillCategory.NavMesh, Operation = SkillOperation.Query,
             Tags = new[] { "navmesh", "settings", "agent", "build" },
             Outputs = new[] { "success", "agentRadius", "agentHeight", "agentSlope", "agentClimb" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object NavMeshGetSettings()
         {
             var settings = NavMesh.GetSettingsByIndex(0);

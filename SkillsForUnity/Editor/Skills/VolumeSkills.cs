@@ -39,7 +39,8 @@ namespace UnitySkills
             Category = SkillCategory.Volume, Operation = SkillOperation.Query,
             Tags = new[] { "volume", "component", "list", "pipeline" },
             Outputs = new[] { "count", "components" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object VolumeListComponentTypes(bool includePostProcess = true) => RenderPipelineSkillsCommon.NoSRP();
 
         [UnitySkill("volume_add_component", "Add a VolumeComponent override to a VolumeProfile",
@@ -58,7 +59,8 @@ namespace UnitySkills
             Category = SkillCategory.Volume, Operation = SkillOperation.Query,
             Tags = new[] { "volume", "component", "inspect", "profile" },
             Outputs = new[] { "componentType", "parameters" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object VolumeGetComponent(string profilePath, string componentType) => RenderPipelineSkillsCommon.NoSRP();
 
         [UnitySkill("volume_set_parameter", "Set a parameter on a VolumeComponent override",
@@ -206,7 +208,8 @@ namespace UnitySkills
             Tags = new[] { "volume", "component", "list", "pipeline" },
             Outputs = new[] { "count", "components" },
             ReadOnly = true,
-            RequiresPackages = new[] { "com.unity.render-pipelines.core" })]
+            RequiresPackages = new[] { "com.unity.render-pipelines.core" },
+            Mode = SkillMode.SemiAuto)]
         public static object VolumeListComponentTypes(bool includePostProcess = true)
         {
             var pipeline = RenderPipelineSkillsCommon.DetectPipeline();
@@ -308,7 +311,8 @@ namespace UnitySkills
             Outputs = new[] { "componentType", "parameters" },
             ReadOnly = true,
             RequiresInput = new[] { "profilePath", "componentType" },
-            RequiresPackages = new[] { "com.unity.render-pipelines.core" })]
+            RequiresPackages = new[] { "com.unity.render-pipelines.core" },
+            Mode = SkillMode.SemiAuto)]
         public static object VolumeGetComponent(string profilePath, string componentType)
         {
             var descriptorResult = ResolveDescriptor(componentType);

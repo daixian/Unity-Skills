@@ -630,7 +630,8 @@ namespace UnitySkills
             Category = SkillCategory.UI, Operation = SkillOperation.Query,
             Tags = new[] { "find", "ugui", "search", "list" },
             Outputs = new[] { "count", "elements" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object UIFindAll(string uiType = null, int limit = 50)
         {
             var canvases = FindHelper.FindAll<Canvas>();

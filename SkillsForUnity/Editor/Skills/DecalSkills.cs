@@ -25,7 +25,8 @@ namespace UnitySkills
             Category = SkillCategory.Decal, Operation = SkillOperation.Query,
             Tags = new[] { "decal", "projector", "info" },
             Outputs = new[] { "name", "material", "size" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object DecalGetInfo(string name = null, int instanceId = 0, string path = null) => RenderPipelineSkillsCommon.NoURP();
 
         [UnitySkill("decal_set_properties", "Modify Decal Projector properties",
@@ -38,7 +39,8 @@ namespace UnitySkills
             Category = SkillCategory.Decal, Operation = SkillOperation.Query,
             Tags = new[] { "decal", "projector", "list" },
             Outputs = new[] { "count", "decals" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object DecalFindAll(int limit = 50) => RenderPipelineSkillsCommon.NoURP();
 
         [UnitySkill("decal_delete", "Delete a Decal Projector GameObject",
@@ -92,7 +94,8 @@ namespace UnitySkills
             Tags = new[] { "decal", "projector", "info" },
             Outputs = new[] { "name", "material", "size" },
             ReadOnly = true,
-            RequiresPackages = new[] { "com.unity.render-pipelines.universal" })]
+            RequiresPackages = new[] { "com.unity.render-pipelines.universal" },
+            Mode = SkillMode.SemiAuto)]
         public static object DecalGetInfo(string name = null, int instanceId = 0, string path = null)
         {
             var projectorResult = GetProjector(name, instanceId, path);
@@ -199,7 +202,8 @@ namespace UnitySkills
             Tags = new[] { "decal", "projector", "list" },
             Outputs = new[] { "count", "decals" },
             ReadOnly = true,
-            RequiresPackages = new[] { "com.unity.render-pipelines.universal" })]
+            RequiresPackages = new[] { "com.unity.render-pipelines.universal" },
+            Mode = SkillMode.SemiAuto)]
         public static object DecalFindAll(int limit = 50)
         {
             var decals = FindHelper.FindAll<DecalProjector>()

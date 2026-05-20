@@ -18,7 +18,8 @@ namespace UnitySkills
             Category = SkillCategory.PostProcess, Operation = SkillOperation.Query,
             Tags = new[] { "postprocess", "effects", "list", "pipeline" },
             Outputs = new[] { "count", "effects" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object PostProcessListEffects() => RenderPipelineSkillsCommon.NoSRP();
 
         [UnitySkill("postprocess_add_effect", "Add a post-processing effect override to a VolumeProfile",
@@ -37,7 +38,8 @@ namespace UnitySkills
             Category = SkillCategory.PostProcess, Operation = SkillOperation.Query,
             Tags = new[] { "postprocess", "effect", "inspect", "profile" },
             Outputs = new[] { "effectType", "parameters" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object PostProcessGetEffect(string profilePath, string effectType) => RenderPipelineSkillsCommon.NoSRP();
 
         [UnitySkill("postprocess_set_parameter", "Set a parameter on a post-processing effect override",
@@ -81,7 +83,8 @@ namespace UnitySkills
             Tags = new[] { "postprocess", "effects", "list", "pipeline" },
             Outputs = new[] { "count", "effects" },
             ReadOnly = true,
-            RequiresPackages = new[] { "com.unity.render-pipelines.core" })]
+            RequiresPackages = new[] { "com.unity.render-pipelines.core" },
+            Mode = SkillMode.SemiAuto)]
         public static object PostProcessListEffects()
         {
             var pipeline = RenderPipelineSkillsCommon.DetectPipeline();
@@ -165,7 +168,8 @@ namespace UnitySkills
             Outputs = new[] { "effectType", "parameters" },
             ReadOnly = true,
             RequiresInput = new[] { "profilePath", "effectType" },
-            RequiresPackages = new[] { "com.unity.render-pipelines.core" })]
+            RequiresPackages = new[] { "com.unity.render-pipelines.core" },
+            Mode = SkillMode.SemiAuto)]
         public static object PostProcessGetEffect(string profilePath, string effectType)
         {
             var effectResult = GetEffect(profilePath, effectType);

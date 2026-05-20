@@ -211,7 +211,8 @@ namespace UnitySkills
             Tags = new[] { "prefab", "overrides", "inspect", "diff" },
             Outputs = new[] { "prefabPath", "propertyOverrides", "addedComponents", "removedComponents", "addedGameObjects", "hasOverrides" },
             RequiresInput = new[] { "prefabInstance" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object PrefabGetOverrides(string name = null, int instanceId = 0)
         {
             var (go, goErr) = GameObjectFinder.FindOrError(name: name, instanceId: instanceId);
@@ -320,7 +321,8 @@ namespace UnitySkills
             Tags = new[] { "prefab", "find", "instances", "scene" },
             Outputs = new[] { "prefabPath", "count", "instances" },
             RequiresInput = new[] { "prefabPath" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object PrefabFindInstances(string prefabPath, int limit = 50)
         {
             if (Validate.Required(prefabPath, "prefabPath") is object err) return err;

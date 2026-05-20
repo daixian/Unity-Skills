@@ -33,7 +33,8 @@ namespace UnitySkills
             Category = SkillCategory.Camera, Operation = SkillOperation.Query,
             Tags = new[] { "scene-view", "position", "rotation", "info" },
             Outputs = new[] { "position", "rotation", "pivot", "size", "orthographic" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object CameraGetInfo()
         {
             if (SceneView.lastActiveSceneView != null)
@@ -111,7 +112,8 @@ namespace UnitySkills
             Tags = new[] { "camera", "properties", "fov", "clip-plane" },
             Outputs = new[] { "name", "fieldOfView", "nearClipPlane", "farClipPlane", "orthographic", "depth", "clearFlags" },
             RequiresInput = new[] { "gameObject" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object CameraGetProperties(string name = null, int instanceId = 0, string path = null)
         {
             var (cam, err) = GameObjectFinder.FindComponentOrError<Camera>(name, instanceId, path);
@@ -237,7 +239,8 @@ namespace UnitySkills
             Category = SkillCategory.Camera, Operation = SkillOperation.Query,
             Tags = new[] { "camera", "list", "scene", "enumerate" },
             Outputs = new[] { "count", "cameras" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object CameraList()
         {
             var cameras = FindHelper.FindAll<Camera>();

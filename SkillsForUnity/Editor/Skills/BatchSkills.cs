@@ -20,7 +20,8 @@ namespace UnitySkills
             Category = SkillCategory.Workflow, Operation = SkillOperation.Query,
             Tags = new[] { "batch", "query", "gameobject", "filter" },
             Outputs = new[] { "count", "objects", "summary" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object BatchQueryGameObjects(string queryJson = null, int sampleLimit = 20)
         {
             var query = ParseQuery(queryJson);
@@ -33,7 +34,8 @@ namespace UnitySkills
             Category = SkillCategory.Workflow, Operation = SkillOperation.Query,
             Tags = new[] { "batch", "query", "component", "filter" },
             Outputs = new[] { "count", "objects", "summary" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object BatchQueryComponents(string queryJson = null, string componentType = null, int sampleLimit = 20)
         {
             var query = ParseQuery(queryJson);
@@ -56,7 +58,8 @@ namespace UnitySkills
             Category = SkillCategory.Workflow, Operation = SkillOperation.Query,
             Tags = new[] { "batch", "query", "asset", "filter", "project" },
             Outputs = new[] { "count", "assets", "summary" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object BatchQueryAssets(
             string searchFilter = null,
             string folder = "Assets",
@@ -125,7 +128,8 @@ namespace UnitySkills
             Category = SkillCategory.Workflow, Operation = SkillOperation.Analyze,
             Tags = new[] { "batch", "preview", "rename" },
             Outputs = new[] { "confirmToken", "targetCount", "sampleChanges", "riskLevel" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object BatchPreviewRename(
             string queryJson = null,
             string mode = "prefix",
@@ -146,7 +150,8 @@ namespace UnitySkills
             Category = SkillCategory.Workflow, Operation = SkillOperation.Analyze,
             Tags = new[] { "batch", "preview", "property", "component" },
             Outputs = new[] { "confirmToken", "targetCount", "sampleChanges", "riskLevel" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object BatchPreviewSetProperty(
             string queryJson = null,
             string componentType = null,
@@ -166,7 +171,8 @@ namespace UnitySkills
             Category = SkillCategory.Workflow, Operation = SkillOperation.Analyze,
             Tags = new[] { "batch", "preview", "material", "renderer" },
             Outputs = new[] { "confirmToken", "targetCount", "sampleChanges", "riskLevel" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object BatchPreviewReplaceMaterial(string queryJson = null, string materialPath = null, int sampleLimit = DefaultSampleLimit)
         {
             var query = ParseQuery(queryJson);
@@ -230,7 +236,8 @@ namespace UnitySkills
             Tags = new[] { "batch", "report", "details" },
             Outputs = new[] { "reportId", "totals", "items", "failureGroups" },
             RequiresInput = new[] { "reportId" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object BatchReportGet(string reportId)
         {
             if (Validate.Required(reportId, "reportId") is object err)
@@ -262,7 +269,8 @@ namespace UnitySkills
             Category = SkillCategory.Workflow, Operation = SkillOperation.Query,
             Tags = new[] { "batch", "report", "list" },
             Outputs = new[] { "count", "reports" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object BatchReportList(int limit = 20)
         {
             var reports = BatchPersistence.ListReports(limit);
@@ -289,7 +297,8 @@ namespace UnitySkills
             Tags = new[] { "job", "status", "async" },
             Outputs = new[] { "jobId", "status", "progress", "currentStage" },
             RequiresInput = new[] { "jobId" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object JobStatus(string jobId)
         {
             if (Validate.Required(jobId, "jobId") is object err)
@@ -326,7 +335,8 @@ namespace UnitySkills
             Tags = new[] { "job", "logs", "async" },
             Outputs = new[] { "jobId", "logs" },
             RequiresInput = new[] { "jobId" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object JobLogs(string jobId, int limit = 100)
         {
             if (Validate.Required(jobId, "jobId") is object err)
@@ -349,7 +359,8 @@ namespace UnitySkills
             Category = SkillCategory.Workflow, Operation = SkillOperation.Query,
             Tags = new[] { "job", "list", "async" },
             Outputs = new[] { "count", "jobs" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object JobList(int limit = 20)
         {
             var jobs = AsyncJobService.List(limit);
@@ -431,7 +442,8 @@ namespace UnitySkills
             Category = SkillCategory.Validation, Operation = SkillOperation.Analyze,
             Tags = new[] { "batch", "missing", "scripts", "cleanup" },
             Outputs = new[] { "confirmToken", "targetCount", "sampleChanges", "riskLevel" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object BatchFixMissingScripts(string queryJson = null, int sampleLimit = DefaultSampleLimit)
         {
             var preview = BuildMissingScriptsPreview(ParseQuery(queryJson));
@@ -442,7 +454,8 @@ namespace UnitySkills
             Category = SkillCategory.Validation, Operation = SkillOperation.Analyze,
             Tags = new[] { "batch", "naming", "standardize", "rename" },
             Outputs = new[] { "confirmToken", "targetCount", "sampleChanges", "riskLevel" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object BatchStandardizeNaming(string queryJson = null, string separator = "_", int sampleLimit = DefaultSampleLimit)
         {
             var preview = BuildStandardizeNamingPreview(ParseQuery(queryJson), separator);
@@ -453,7 +466,8 @@ namespace UnitySkills
             Category = SkillCategory.Validation, Operation = SkillOperation.Analyze,
             Tags = new[] { "batch", "layer", "rendering", "gameobject" },
             Outputs = new[] { "confirmToken", "targetCount", "sampleChanges", "riskLevel" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object BatchSetRenderLayer(string queryJson = null, string layer = null, bool recursive = false, int sampleLimit = DefaultSampleLimit)
         {
             var preview = BuildSetLayerPreview(ParseQuery(queryJson), layer, recursive);
@@ -464,7 +478,8 @@ namespace UnitySkills
             Category = SkillCategory.Validation, Operation = SkillOperation.Analyze,
             Tags = new[] { "batch", "material", "replace", "renderer" },
             Outputs = new[] { "confirmToken", "targetCount", "sampleChanges", "riskLevel" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object BatchReplaceMaterial(string queryJson = null, string materialPath = null, int sampleLimit = DefaultSampleLimit)
         {
             var preview = BuildReplaceMaterialPreview(ParseQuery(queryJson), materialPath);
@@ -475,7 +490,8 @@ namespace UnitySkills
             Category = SkillCategory.Validation, Operation = SkillOperation.Analyze,
             Tags = new[] { "batch", "validate", "scene", "report" },
             Outputs = new[] { "summary", "issues" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object BatchValidateSceneObjects(int issueLimit = 100)
         {
             var scene = ValidationSkills.ValidateScene(checkEmptyGameObjects: true);
@@ -493,7 +509,8 @@ namespace UnitySkills
             Category = SkillCategory.Validation, Operation = SkillOperation.Analyze,
             Tags = new[] { "batch", "cleanup", "temp", "delete" },
             Outputs = new[] { "confirmToken", "targetCount", "sampleChanges", "riskLevel" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object BatchCleanupTempObjects(string queryJson = null, string patternsCsv = null, int sampleLimit = DefaultSampleLimit)
         {
             var preview = BuildCleanupTempObjectsPreview(ParseQuery(queryJson), patternsCsv);

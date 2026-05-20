@@ -28,7 +28,8 @@ namespace UnitySkills
             Category = SkillCategory.Validation, Operation = SkillOperation.Analyze,
             Tags = new[] { "validation", "scene", "health", "check", "issues" },
             Outputs = new[] { "scene", "totalIssues", "summary", "issues" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ValidateScene(bool checkMissingScripts = true, bool checkMissingPrefabs = true, bool checkDuplicateNames = true, bool checkEmptyGameObjects = false)
         {
             var issues = new List<ValidationIssue>();
@@ -134,7 +135,8 @@ namespace UnitySkills
             Category = SkillCategory.Validation, Operation = SkillOperation.Analyze,
             Tags = new[] { "validation", "missing", "scripts", "prefab" },
             Outputs = new[] { "totalFound", "objects" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ValidateFindMissingScripts(bool searchInPrefabs = true)
         {
             var results = new List<object>();
@@ -251,7 +253,8 @@ namespace UnitySkills
             Category = SkillCategory.Validation, Operation = SkillOperation.Analyze,
             Tags = new[] { "validation", "unused", "assets", "cleanup" },
             Outputs = new[] { "assetType", "potentiallyUnusedCount", "assets" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ValidateFindUnusedAssets(string assetType = "Material", int limit = 100)
         {
             var filter = $"t:{assetType}";
@@ -303,7 +306,8 @@ namespace UnitySkills
             Category = SkillCategory.Validation, Operation = SkillOperation.Analyze,
             Tags = new[] { "validation", "texture", "size", "optimization" },
             Outputs = new[] { "maxRecommendedSize", "largeTextureCount", "textures" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ValidateTextureSizes(int maxRecommendedSize = 2048, int limit = 50)
         {
             var largeTextures = new List<object>();
@@ -347,7 +351,8 @@ namespace UnitySkills
             Category = SkillCategory.Validation, Operation = SkillOperation.Query,
             Tags = new[] { "validation", "project", "structure", "overview" },
             Outputs = new[] { "rootPath", "assetCounts", "structure" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ValidateProjectStructure(string rootPath = "Assets", int maxDepth = 2)
         {
             var structure = GetFolderStructure(rootPath, 0, maxDepth);
@@ -431,7 +436,8 @@ namespace UnitySkills
             Category = SkillCategory.Validation, Operation = SkillOperation.Analyze,
             Tags = new[] { "validation", "missing", "references", "null" },
             Outputs = new[] { "count", "issues" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ValidateMissingReferences(int limit = 50)
         {
             var results = new List<object>();
@@ -462,7 +468,8 @@ namespace UnitySkills
             Category = SkillCategory.Validation, Operation = SkillOperation.Analyze,
             Tags = new[] { "validation", "mesh", "collider", "convex", "performance" },
             Outputs = new[] { "count", "nonConvexColliders" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ValidateMeshColliderConvex(int limit = 50)
         {
             var colliders = FindHelper.FindAll<MeshCollider>()
@@ -478,7 +485,8 @@ namespace UnitySkills
             Category = SkillCategory.Validation, Operation = SkillOperation.Analyze,
             Tags = new[] { "validation", "shader", "errors", "compilation" },
             Outputs = new[] { "count", "shaders" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ValidateShaderErrors(int limit = 50)
         {
             var guids = AssetDatabase.FindAssets("t:Shader");

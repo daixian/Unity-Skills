@@ -56,7 +56,8 @@ namespace UnitySkills
             Category = SkillCategory.Sample, Operation = SkillOperation.Query,
             Tags = new[] { "scene", "info", "overview", "quick" },
             Outputs = new[] { "sceneName", "scenePath", "rootObjectCount", "rootObjects" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object GetSceneInfo()
         {
             var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
@@ -116,7 +117,8 @@ namespace UnitySkills
             Category = SkillCategory.Sample, Operation = SkillOperation.Query,
             Tags = new[] { "find", "search", "name", "quick" },
             Outputs = new[] { "query", "count", "objects" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object FindObjectsByName(string nameContains = null, string name = null)
         {
             nameContains = nameContains ?? name;

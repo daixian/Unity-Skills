@@ -122,7 +122,8 @@ namespace UnitySkills
             Category = SkillCategory.Optimization, Operation = SkillOperation.Analyze,
             Tags = new[] { "optimization", "scene", "performance", "poly", "materials" },
             Outputs = new[] { "totalRenderers", "totalTriangles", "totalMaterialSlots", "issueCount", "issues" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object OptimizeAnalyzeScene(int polyThreshold = 10000, int materialThreshold = 5)
         {
             var renderers = FindHelper.FindAll<Renderer>();
@@ -152,7 +153,8 @@ namespace UnitySkills
             Category = SkillCategory.Optimization, Operation = SkillOperation.Analyze,
             Tags = new[] { "optimization", "assets", "size", "large" },
             Outputs = new[] { "threshold", "count", "assets" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object OptimizeFindLargeAssets(int thresholdKB = 1024, string assetType = "", int limit = 50)
         {
             var filter = string.IsNullOrEmpty(assetType) ? "" : $"t:{assetType}";
@@ -205,7 +207,8 @@ namespace UnitySkills
             Tags = new[] { "optimization", "static", "flags", "query" },
             Outputs = new[] { "gameObject", "flags", "isStatic" },
             RequiresInput = new[] { "gameObject" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object OptimizeGetStaticFlags(string name = null, int instanceId = 0, string path = null)
         {
             var (go, error) = GameObjectFinder.FindOrError(name, instanceId, path);
@@ -256,7 +259,8 @@ namespace UnitySkills
             Category = SkillCategory.Optimization, Operation = SkillOperation.Analyze,
             Tags = new[] { "optimization", "materials", "duplicates", "shader" },
             Outputs = new[] { "duplicateGroups", "groups" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object OptimizeFindDuplicateMaterials(int limit = 50)
         {
             var guids = AssetDatabase.FindAssets("t:Material");
@@ -281,7 +285,8 @@ namespace UnitySkills
             Category = SkillCategory.Optimization, Operation = SkillOperation.Analyze,
             Tags = new[] { "optimization", "overdraw", "transparent", "rendering" },
             Outputs = new[] { "transparentObjectCount", "objects" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object OptimizeAnalyzeOverdraw(int limit = 50)
         {
             var renderers = FindHelper.FindAll<Renderer>();

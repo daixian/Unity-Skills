@@ -65,7 +65,8 @@ namespace UnitySkills
             Tags = new[] { "camera", "inspect", "vcam", "cinemachine" },
             Outputs = new[] { "name", "priority", "follow", "lookAt", "lens", "components" },
             RequiresInput = new[] { "vcam" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object CinemachineInspectVCam(string vcamName = null, int instanceId = 0, string path = null)
         {
 #if !CINEMACHINE_2 && !CINEMACHINE_3
@@ -442,7 +443,8 @@ namespace UnitySkills
             Category = SkillCategory.Cinemachine, Operation = SkillOperation.Query,
             Tags = new[] { "cinemachine", "component", "list", "pipeline" },
             Outputs = new[] { "count", "components" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object CinemachineListComponents()
         {
 #if !CINEMACHINE_2 && !CINEMACHINE_3
@@ -551,7 +553,8 @@ namespace UnitySkills
             Category = SkillCategory.Cinemachine, Operation = SkillOperation.Query,
             Tags = new[] { "camera", "brain", "blend", "active", "cinemachine" },
             Outputs = new[] { "activeCamera", "isBlending", "activeBlend", "updateMethod" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object CinemachineGetBrainInfo()
         {
 #if !CINEMACHINE_2 && !CINEMACHINE_3

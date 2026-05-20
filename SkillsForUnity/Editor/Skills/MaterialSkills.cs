@@ -835,7 +835,8 @@ namespace UnitySkills
             Tags = new[] { "property", "inspect", "shader", "material" },
             Outputs = new[] { "shader", "renderQueue", "keywords", "giFlags", "properties" },
             RequiresInput = new[] { "gameObject|materialPath" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object MaterialGetProperties(string name = null, int instanceId = 0, string path = null)
         {
             var (material, go, error) = FindMaterial(name, instanceId, path);
@@ -905,7 +906,8 @@ namespace UnitySkills
             Tags = new[] { "keyword", "shader", "inspect" },
             Outputs = new[] { "shader", "enabledKeywords", "commonKeywordStatus" },
             RequiresInput = new[] { "gameObject|materialPath" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object MaterialGetKeywords(string name = null, int instanceId = 0, string path = null)
         {
             var (material, go, error) = FindMaterial(name, instanceId, path);

@@ -76,7 +76,8 @@ namespace UnitySkills
             Category = SkillCategory.Scene, Operation = SkillOperation.Query,
             Tags = new[] { "info", "status", "roots" },
             Outputs = new[] { "sceneName", "scenePath", "rootObjects" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object SceneGetInfo()
         {
             var scene = SceneManager.GetActiveScene();
@@ -101,7 +102,8 @@ namespace UnitySkills
             Category = SkillCategory.Scene, Operation = SkillOperation.Query,
             Tags = new[] { "hierarchy", "tree", "structure" },
             Outputs = new[] { "sceneName", "hierarchy" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object SceneGetHierarchy(int maxDepth = 3)
         {
             var scene = SceneManager.GetActiveScene();
@@ -180,7 +182,8 @@ namespace UnitySkills
             Category = SkillCategory.Scene, Operation = SkillOperation.Query,
             Tags = new[] { "loaded", "list", "multi-scene" },
             Outputs = new[] { "count", "scenes" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object SceneGetLoaded()
         {
             var scenes = new System.Collections.Generic.List<object>();
@@ -259,7 +262,8 @@ namespace UnitySkills
             Category = SkillCategory.Scene, Operation = SkillOperation.Query,
             Tags = new[] { "search", "filter", "find", "objects" },
             Outputs = new[] { "count", "objects", "instanceId", "path" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object SceneFindObjects(string namePattern = null, string tag = null, string componentType = null, int limit = 50)
         {
             IEnumerable<GameObject> objects = GameObjectFinder.GetSceneObjects();

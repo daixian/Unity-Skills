@@ -13,7 +13,8 @@ namespace UnitySkills
             Category = SkillCategory.Physics, Operation = SkillOperation.Query,
             Tags = new[] { "raycast", "collision", "detection", "line-of-sight" },
             Outputs = new[] { "hit", "collider", "point", "normal", "distance" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object PhysicsRaycast(
             float originX, float originY, float originZ,
             float dirX, float dirY, float dirZ,
@@ -50,7 +51,8 @@ namespace UnitySkills
             Category = SkillCategory.Physics, Operation = SkillOperation.Query,
             Tags = new[] { "overlap", "sphere", "collision", "detection" },
             Outputs = new[] { "count", "colliders" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object PhysicsCheckOverlap(
             float x, float y, float z,
             float radius,
@@ -79,7 +81,8 @@ namespace UnitySkills
             Category = SkillCategory.Physics, Operation = SkillOperation.Query,
             Tags = new[] { "gravity", "global", "setting" },
             Outputs = new[] { "x", "y", "z" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object PhysicsGetGravity()
         {
             var g = Physics.gravity;
@@ -113,7 +116,8 @@ namespace UnitySkills
             Category = SkillCategory.Physics, Operation = SkillOperation.Query,
             Tags = new[] { "raycast", "penetrating", "collision", "detection" },
             Outputs = new[] { "count", "hits" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object PhysicsRaycastAll(
             float originX, float originY, float originZ,
             float dirX, float dirY, float dirZ,
@@ -141,7 +145,8 @@ namespace UnitySkills
             Category = SkillCategory.Physics, Operation = SkillOperation.Query,
             Tags = new[] { "spherecast", "collision", "detection", "sweep" },
             Outputs = new[] { "hit", "objectName", "point", "distance" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object PhysicsSphereCast(
             float originX, float originY, float originZ,
             float dirX, float dirY, float dirZ,
@@ -170,7 +175,8 @@ namespace UnitySkills
             Category = SkillCategory.Physics, Operation = SkillOperation.Query,
             Tags = new[] { "boxcast", "collision", "detection", "sweep" },
             Outputs = new[] { "hit", "objectName", "point", "distance" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object PhysicsBoxCast(
             float originX, float originY, float originZ,
             float dirX, float dirY, float dirZ,
@@ -201,7 +207,8 @@ namespace UnitySkills
             Category = SkillCategory.Physics, Operation = SkillOperation.Query,
             Tags = new[] { "overlap", "box", "collision", "detection" },
             Outputs = new[] { "count", "colliders" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object PhysicsOverlapBox(
             float x, float y, float z,
             float halfExtentX = 0.5f, float halfExtentY = 0.5f, float halfExtentZ = 0.5f,
@@ -279,7 +286,8 @@ namespace UnitySkills
             Category = SkillCategory.Physics, Operation = SkillOperation.Query,
             Tags = new[] { "layer", "collision", "matrix" },
             Outputs = new[] { "layer1", "layer2", "collisionEnabled" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object PhysicsGetLayerCollision(int layer1, int layer2)
         {
             bool ignored = Physics.GetIgnoreLayerCollision(layer1, layer2);

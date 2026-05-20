@@ -96,7 +96,8 @@ namespace UnitySkills
             Tags = new[] { "shader", "read", "source", "code" },
             Outputs = new[] { "path", "lines", "content" },
             RequiresInput = new[] { "assetPath" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ShaderRead(string shaderPath)
         {
             if (Validate.SafePath(shaderPath, "shaderPath") is object pathErr) return pathErr;
@@ -113,7 +114,8 @@ namespace UnitySkills
             Category = SkillCategory.Shader, Operation = SkillOperation.Query,
             Tags = new[] { "shader", "list", "search", "asset" },
             Outputs = new[] { "count", "shaders" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ShaderList(string filter = null, int limit = 100)
         {
             var guids = AssetDatabase.FindAssets("t:Shader");
@@ -141,7 +143,8 @@ namespace UnitySkills
             Tags = new[] { "shader", "property", "inspect" },
             Outputs = new[] { "shaderName", "propertyCount", "properties" },
             RequiresInput = new[] { "assetPath" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ShaderGetProperties(string shaderNameOrPath)
         {
             var shader = FindShaderByNameOrPath(shaderNameOrPath);
@@ -170,7 +173,8 @@ namespace UnitySkills
             Category = SkillCategory.Shader, Operation = SkillOperation.Query,
             Tags = new[] { "shader", "find", "search" },
             Outputs = new[] { "found", "name", "path" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ShaderFind(string searchName)
         {
             var shader = Shader.Find(searchName);
@@ -210,7 +214,8 @@ namespace UnitySkills
             Tags = new[] { "shader", "error", "compile", "diagnostic" },
             Outputs = new[] { "shaderName", "hasErrors", "messageCount" },
             RequiresInput = new[] { "assetPath" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ShaderCheckErrors(string shaderNameOrPath)
         {
             var shader = FindShaderByNameOrPath(shaderNameOrPath);
@@ -224,7 +229,8 @@ namespace UnitySkills
             Tags = new[] { "shader", "keyword", "inspect" },
             Outputs = new[] { "shaderName", "keywordCount", "keywords" },
             RequiresInput = new[] { "assetPath" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ShaderGetKeywords(string shaderNameOrPath)
         {
             var shader = FindShaderByNameOrPath(shaderNameOrPath);
@@ -238,7 +244,8 @@ namespace UnitySkills
             Tags = new[] { "shader", "variant", "performance", "optimization" },
             Outputs = new[] { "shaderName", "subshaderCount", "totalPasses" },
             RequiresInput = new[] { "assetPath" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ShaderGetVariantCount(string shaderNameOrPath)
         {
             var shader = FindShaderByNameOrPath(shaderNameOrPath);

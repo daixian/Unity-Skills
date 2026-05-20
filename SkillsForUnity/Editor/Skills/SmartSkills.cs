@@ -36,7 +36,8 @@ namespace UnitySkills
             Category = SkillCategory.Smart, Operation = SkillOperation.Query,
             Tags = new[] { "query", "component", "property", "filter", "search" },
             Outputs = new[] { "count", "query", "results" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object SmartSceneQuery(
             string componentName = null,
             string propertyName = null,
@@ -388,7 +389,8 @@ namespace UnitySkills
             Category = SkillCategory.Smart, Operation = SkillOperation.Query,
             Tags = new[] { "spatial", "sphere", "overlap", "physics", "search" },
             Outputs = new[] { "count", "center", "radius", "results" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object SmartSceneQuerySpatial(
             float x, float y, float z, float radius = 10f,
             string componentFilter = null, int limit = 50)

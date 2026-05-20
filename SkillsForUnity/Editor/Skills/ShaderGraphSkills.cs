@@ -16,7 +16,8 @@ namespace UnitySkills
             Tags = new[] { "shadergraph", "template", "list", "graph", "subgraph" },
             Outputs = new[] { "count", "templates" },
             ReadOnly = true,
-            RequiresPackages = new[] { "com.unity.shadergraph" })]
+            RequiresPackages = new[] { "com.unity.shadergraph" },
+            Mode = SkillMode.SemiAuto)]
         public static object ShaderGraphListTemplates(bool includeSubGraphs = false, string filter = null)
         {
             if (!ShaderGraphReflectionHelper.HasPackageFolder)
@@ -158,7 +159,8 @@ namespace UnitySkills
             Category = SkillCategory.ShaderGraph, Operation = SkillOperation.Query,
             Tags = new[] { "shadergraph", "list", "assets", "graph", "subgraph" },
             Outputs = new[] { "count", "assets" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ShaderGraphListAssets(string filter = null, bool includeSubGraphs = true, int limit = 100)
         {
             var searchFilter = string.IsNullOrWhiteSpace(filter) ? string.Empty : filter;
@@ -192,7 +194,8 @@ namespace UnitySkills
             Tags = new[] { "shadergraph", "inspect", "info", "graph", "subgraph" },
             Outputs = new[] { "assetPath", "kind", "propertyCount", "keywordCount", "nodeCount", "edgeCount" },
             ReadOnly = true,
-            RequiresInput = new[] { "assetPath" })]
+            RequiresInput = new[] { "assetPath" },
+            Mode = SkillMode.SemiAuto)]
         public static object ShaderGraphGetInfo(string assetPath)
         {
             if (Validate.Required(assetPath, "assetPath") is object err) return err;
@@ -209,7 +212,8 @@ namespace UnitySkills
             Tags = new[] { "shadergraph", "structure", "nodes", "edges", "inspect" },
             Outputs = new[] { "nodes", "edges", "properties", "keywords" },
             ReadOnly = true,
-            RequiresInput = new[] { "assetPath" })]
+            RequiresInput = new[] { "assetPath" },
+            Mode = SkillMode.SemiAuto)]
         public static object ShaderGraphGetStructure(string assetPath, int maxNodes = 200, int maxEdges = 200)
         {
             if (Validate.Required(assetPath, "assetPath") is object err) return err;
@@ -229,7 +233,8 @@ namespace UnitySkills
             Tags = new[] { "shadergraph", "node", "supported", "list", "editing" },
             Outputs = new[] { "count", "nodes" },
             ReadOnly = true,
-            RequiresPackages = new[] { "com.unity.shadergraph" })]
+            RequiresPackages = new[] { "com.unity.shadergraph" },
+            Mode = SkillMode.SemiAuto)]
         public static object ShaderGraphListSupportedNodes()
         {
             if (!ShaderGraphReflectionHelper.IsShaderGraphInstalled)
@@ -433,7 +438,8 @@ namespace UnitySkills
             Tags = new[] { "shadergraph", "property", "list", "inspect" },
             Outputs = new[] { "count", "properties" },
             ReadOnly = true,
-            RequiresInput = new[] { "assetPath" })]
+            RequiresInput = new[] { "assetPath" },
+            Mode = SkillMode.SemiAuto)]
         public static object ShaderGraphListProperties(string assetPath)
         {
             if (Validate.Required(assetPath, "assetPath") is object err) return err;
@@ -554,7 +560,8 @@ namespace UnitySkills
             Tags = new[] { "shadergraph", "keyword", "list", "inspect" },
             Outputs = new[] { "count", "keywords" },
             ReadOnly = true,
-            RequiresInput = new[] { "assetPath" })]
+            RequiresInput = new[] { "assetPath" },
+            Mode = SkillMode.SemiAuto)]
         public static object ShaderGraphListKeywords(string assetPath)
         {
             if (Validate.Required(assetPath, "assetPath") is object err) return err;

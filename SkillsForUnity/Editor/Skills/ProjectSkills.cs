@@ -112,7 +112,8 @@ namespace UnitySkills
             Category = SkillCategory.Project, Operation = SkillOperation.Query,
             Tags = new[] { "project", "info", "version", "render pipeline", "settings" },
             Outputs = new[] { "unityVersion", "productName", "renderPipeline", "recommendedShaders", "projectPath", "isPlaying" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ProjectGetInfo()
         {
             var pipeline = DetectRenderPipeline();
@@ -147,7 +148,8 @@ namespace UnitySkills
             Category = SkillCategory.Project, Operation = SkillOperation.Query,
             Tags = new[] { "project", "render pipeline", "shader", "urp", "hdrp" },
             Outputs = new[] { "pipelineType", "pipelineName", "defaultShader", "unlitShader", "availableShaders" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ProjectGetRenderPipeline()
         {
             var pipeline = DetectRenderPipeline();
@@ -209,7 +211,8 @@ namespace UnitySkills
             Category = SkillCategory.Project, Operation = SkillOperation.Query,
             Tags = new[] { "project", "shader", "list", "search" },
             Outputs = new[] { "count", "shaders" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ProjectListShaders(string filter = null, int limit = 50)
         {
             var shaderNames = new List<string>();
@@ -270,7 +273,8 @@ namespace UnitySkills
             Category = SkillCategory.Project, Operation = SkillOperation.Query,
             Tags = new[] { "project", "build", "platform", "scenes" },
             Outputs = new[] { "activeBuildTarget", "buildTargetGroup", "sceneCount", "scenes" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ProjectGetBuildSettings()
         {
             var scenes = EditorBuildSettings.scenes.Select((s, i) => new { index = i, path = s.path, enabled = s.enabled }).ToArray();
@@ -288,7 +292,8 @@ namespace UnitySkills
             Category = SkillCategory.Project, Operation = SkillOperation.Query,
             Tags = new[] { "project", "packages", "upm", "manifest" },
             Outputs = new[] { "manifest" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ProjectGetPackages()
         {
             var manifestPath = "Packages/manifest.json";
@@ -302,7 +307,8 @@ namespace UnitySkills
             Category = SkillCategory.Project, Operation = SkillOperation.Query,
             Tags = new[] { "project", "layers", "physics", "collision" },
             Outputs = new[] { "count", "layers" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ProjectGetLayers()
         {
             var layers = UnityEditorInternal.InternalEditorUtility.layers;
@@ -313,7 +319,8 @@ namespace UnitySkills
             Category = SkillCategory.Project, Operation = SkillOperation.Query,
             Tags = new[] { "project", "tags", "label" },
             Outputs = new[] { "count", "tags" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ProjectGetTags()
         {
             var tags = UnityEditorInternal.InternalEditorUtility.tags;
@@ -346,7 +353,8 @@ namespace UnitySkills
             Category = SkillCategory.Project, Operation = SkillOperation.Query,
             Tags = new[] { "project", "player", "settings", "build" },
             Outputs = new[] { "productName", "companyName", "bundleVersion", "scriptingBackend", "apiCompatibility" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ProjectGetPlayerSettings()
         {
             return new

@@ -28,7 +28,8 @@ namespace UnitySkills
             Category = SkillCategory.XR, Operation = SkillOperation.Analyze,
             Tags = new[] { "xr", "setup", "validation", "diagnostic" },
             Outputs = new[] { "xriInstalled", "interactionManagerCount", "xrOriginCount", "issueCount", "issues" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object XRCheckSetup(bool verbose = false)
         {
 #if !XRI
@@ -381,7 +382,8 @@ namespace UnitySkills
             Category = SkillCategory.XR, Operation = SkillOperation.Query | SkillOperation.Analyze,
             Tags = new[] { "xr", "report", "scene", "diagnostic" },
             Outputs = new[] { "xriVersion", "totalXRComponents", "components", "summary" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object XRGetSceneReport(bool verbose = false)
         {
 #if !XRI
@@ -622,7 +624,8 @@ namespace UnitySkills
             Category = SkillCategory.XR, Operation = SkillOperation.Query,
             Tags = new[] { "xr", "interactors", "list", "scene" },
             Outputs = new[] { "count", "interactors", "xriVersion" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object XRListInteractors(bool verbose = false)
         {
 #if !XRI
@@ -866,7 +869,8 @@ namespace UnitySkills
             Category = SkillCategory.XR, Operation = SkillOperation.Query,
             Tags = new[] { "xr", "interactables", "list", "scene" },
             Outputs = new[] { "count", "interactables", "xriVersion" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object XRListInteractables(bool verbose = false)
         {
 #if !XRI

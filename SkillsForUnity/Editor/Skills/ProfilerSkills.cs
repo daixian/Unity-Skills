@@ -38,7 +38,8 @@ namespace UnitySkills
             Category = SkillCategory.Profiler, Operation = SkillOperation.Query,
             Tags = new[] { "profiler", "fps", "memory", "batches", "performance" },
             Outputs = new[] { "fps", "frameTime", "triangles", "batches", "memory" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ProfilerGetStats()
         {
             long totalAllocatedMemory = Profiler.GetTotalAllocatedMemoryLong();
@@ -88,7 +89,8 @@ namespace UnitySkills
             Category = SkillCategory.Profiler, Operation = SkillOperation.Query,
             Tags = new[] { "profiler", "memory", "heap", "allocated" },
             Outputs = new[] { "totalAllocatedMB", "totalReservedMB", "unusedReservedMB", "monoHeapMB", "monoUsedMB" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ProfilerGetMemory()
         {
             return new
@@ -106,7 +108,8 @@ namespace UnitySkills
             Category = SkillCategory.Profiler, Operation = SkillOperation.Query,
             Tags = new[] { "profiler", "memory", "runtime", "objects" },
             Outputs = new[] { "totalTrackedMB", "showing", "objects" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ProfilerGetRuntimeMemory(int limit = 20)
         {
             var allObjects = Resources.FindObjectsOfTypeAll<UnityEngine.Object>();
@@ -128,7 +131,8 @@ namespace UnitySkills
             Category = SkillCategory.Profiler, Operation = SkillOperation.Query,
             Tags = new[] { "profiler", "memory", "texture", "vram" },
             Outputs = new[] { "totalCount", "totalMB", "topTextures" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ProfilerGetTextureMemory(int limit = 50)
         {
             var textures = Resources.FindObjectsOfTypeAll<Texture>();
@@ -149,7 +153,8 @@ namespace UnitySkills
             Category = SkillCategory.Profiler, Operation = SkillOperation.Query,
             Tags = new[] { "profiler", "memory", "mesh", "vertices" },
             Outputs = new[] { "totalCount", "totalMB", "topMeshes" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ProfilerGetMeshMemory(int limit = 50)
         {
             var meshes = Resources.FindObjectsOfTypeAll<Mesh>();
@@ -169,7 +174,8 @@ namespace UnitySkills
             Category = SkillCategory.Profiler, Operation = SkillOperation.Query,
             Tags = new[] { "profiler", "memory", "material", "shader" },
             Outputs = new[] { "totalCount", "totalMB", "topMaterials" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ProfilerGetMaterialMemory(int limit = 50)
         {
             var materials = Resources.FindObjectsOfTypeAll<Material>();
@@ -189,7 +195,8 @@ namespace UnitySkills
             Category = SkillCategory.Profiler, Operation = SkillOperation.Query,
             Tags = new[] { "profiler", "memory", "audio", "clips" },
             Outputs = new[] { "totalCount", "totalMB", "topClips" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ProfilerGetAudioMemory(int limit = 50)
         {
             var clips = Resources.FindObjectsOfTypeAll<AudioClip>();
@@ -209,7 +216,8 @@ namespace UnitySkills
             Category = SkillCategory.Profiler, Operation = SkillOperation.Query,
             Tags = new[] { "profiler", "objects", "count", "types" },
             Outputs = new[] { "totalObjects", "topTypes" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ProfilerGetObjectCount(int topN = 20)
         {
             var all = Resources.FindObjectsOfTypeAll<UnityEngine.Object>();
@@ -223,7 +231,8 @@ namespace UnitySkills
             Category = SkillCategory.Profiler, Operation = SkillOperation.Query,
             Tags = new[] { "profiler", "rendering", "drawcalls", "batches" },
             Outputs = new[] { "frameTime", "renderTime", "triangles", "vertices", "batches", "drawCalls" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ProfilerGetRenderingStats()
         {
             return new
@@ -247,7 +256,8 @@ namespace UnitySkills
             Category = SkillCategory.Profiler, Operation = SkillOperation.Query,
             Tags = new[] { "profiler", "assetbundle", "loaded", "stats" },
             Outputs = new[] { "count", "bundles" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ProfilerGetAssetBundleStats()
         {
             var bundles = AssetBundle.GetAllLoadedAssetBundles().ToArray();

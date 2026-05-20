@@ -184,7 +184,8 @@ namespace UnitySkills
             Category = SkillCategory.YooAsset, Operation = SkillOperation.Query,
             Tags = new[] { "yooasset", "package", "install", "check", "environment" },
             Outputs = new[] { "installed", "packageVersion", "runtimeAssembly", "editorAvailable", "availablePipelines", "hasCollectorSetting", "compileDefineSet" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object CheckInstalled()
         {
             var runtimeType = Type.GetType("YooAsset.YooAssets, YooAsset");
@@ -418,7 +419,8 @@ namespace UnitySkills
             Tags = new[] { "yooasset", "path", "build", "streamingassets" },
             Outputs = new[] { "defaultBuildOutputRoot", "streamingAssetsRoot" },
             ReadOnly = true,
-            RequiresPackages = new[] { "com.tuyoogame.yooasset" })]
+            RequiresPackages = new[] { "com.tuyoogame.yooasset" },
+            Mode = SkillMode.SemiAuto)]
         public static object GetDefaultPaths()
         {
 #if !YOO_ASSET
@@ -438,7 +440,8 @@ namespace UnitySkills
             Tags = new[] { "yooasset", "build", "settings", "query" },
             Outputs = new[] { "packageName", "pipeline", "compression", "fileNameStyle" },
             ReadOnly = true,
-            RequiresPackages = new[] { "com.tuyoogame.yooasset" })]
+            RequiresPackages = new[] { "com.tuyoogame.yooasset" },
+            Mode = SkillMode.SemiAuto)]
         public static object GetBuildSettings(string packageName, string pipeline = null)
         {
 #if !YOO_ASSET
@@ -604,7 +607,8 @@ namespace UnitySkills
             Tags = new[] { "yooasset", "assetart", "scanner", "list" },
             Outputs = new[] { "scannerCount", "scanners" },
             ReadOnly = true,
-            RequiresPackages = new[] { "com.tuyoogame.yooasset" })]
+            RequiresPackages = new[] { "com.tuyoogame.yooasset" },
+            Mode = SkillMode.SemiAuto)]
         public static object ListAssetArtScanners(string keyword = null)
         {
 #if !YOO_ASSET
@@ -793,7 +797,8 @@ namespace UnitySkills
             Tags = new[] { "yooasset", "runtime", "playmode", "validation", "result" },
             Outputs = new[] { "jobId", "status", "stage", "result" },
             ReadOnly = true,
-            RequiresPackages = new[] { "com.tuyoogame.yooasset" })]
+            RequiresPackages = new[] { "com.tuyoogame.yooasset" },
+            Mode = SkillMode.SemiAuto)]
         public static object RuntimeGetValidationResult(string jobId)
         {
 #if !YOO_ASSET
@@ -858,7 +863,8 @@ namespace UnitySkills
             Tags = new[] { "yooasset", "collector", "package", "list" },
             Outputs = new[] { "packageCount", "packages" },
             ReadOnly = true,
-            RequiresPackages = new[] { "com.tuyoogame.yooasset" })]
+            RequiresPackages = new[] { "com.tuyoogame.yooasset" },
+            Mode = SkillMode.SemiAuto)]
         public static object ListCollectorPackages(bool verbose = false)
         {
 #if !YOO_ASSET
@@ -935,7 +941,8 @@ namespace UnitySkills
             Tags = new[] { "yooasset", "collector", "rule", "list" },
             Outputs = new[] { "activeRules", "addressRules", "packRules", "filterRules", "ignoreRules" },
             ReadOnly = true,
-            RequiresPackages = new[] { "com.tuyoogame.yooasset" })]
+            RequiresPackages = new[] { "com.tuyoogame.yooasset" },
+            Mode = SkillMode.SemiAuto)]
         public static object ListCollectorRules(string ruleKind = "all")
         {
 #if !YOO_ASSET
@@ -1372,7 +1379,8 @@ namespace UnitySkills
             Tags = new[] { "yooasset", "report", "build", "analyze" },
             Outputs = new[] { "summary", "bundleCount", "assetCount", "independAssetCount" },
             ReadOnly = true,
-            RequiresPackages = new[] { "com.tuyoogame.yooasset" })]
+            RequiresPackages = new[] { "com.tuyoogame.yooasset" },
+            Mode = SkillMode.SemiAuto)]
         public static object LoadBuildReport(string reportPath)
         {
 #if !YOO_ASSET
@@ -1436,7 +1444,8 @@ namespace UnitySkills
             Tags = new[] { "yooasset", "report", "bundle", "list", "analyze" },
             Outputs = new[] { "total", "returned", "items" },
             ReadOnly = true,
-            RequiresPackages = new[] { "com.tuyoogame.yooasset" })]
+            RequiresPackages = new[] { "com.tuyoogame.yooasset" },
+            Mode = SkillMode.SemiAuto)]
         public static object ListReportBundles(
             string reportPath,
             string filterEncrypted = null,
@@ -1505,7 +1514,8 @@ namespace UnitySkills
             Tags = new[] { "yooasset", "report", "bundle", "detail", "dependency" },
             Outputs = new[] { "bundleName", "fileSize", "dependBundles", "referenceBundles", "bundleContents" },
             ReadOnly = true,
-            RequiresPackages = new[] { "com.tuyoogame.yooasset" })]
+            RequiresPackages = new[] { "com.tuyoogame.yooasset" },
+            Mode = SkillMode.SemiAuto)]
         public static object GetBundleDetail(string reportPath, string bundleName)
         {
 #if !YOO_ASSET
@@ -1550,7 +1560,8 @@ namespace UnitySkills
             Tags = new[] { "yooasset", "report", "asset", "list", "analyze" },
             Outputs = new[] { "total", "returned", "items" },
             ReadOnly = true,
-            RequiresPackages = new[] { "com.tuyoogame.yooasset" })]
+            RequiresPackages = new[] { "com.tuyoogame.yooasset" },
+            Mode = SkillMode.SemiAuto)]
         public static object ListReportAssets(
             string reportPath,
             string filterBundle = null,
@@ -1611,7 +1622,8 @@ namespace UnitySkills
             Tags = new[] { "yooasset", "report", "asset", "detail", "dependency" },
             Outputs = new[] { "assetPath", "mainBundleName", "dependAssets", "dependBundles" },
             ReadOnly = true,
-            RequiresPackages = new[] { "com.tuyoogame.yooasset" })]
+            RequiresPackages = new[] { "com.tuyoogame.yooasset" },
+            Mode = SkillMode.SemiAuto)]
         public static object GetAssetDetail(string reportPath, string assetPath = null, string address = null)
         {
 #if !YOO_ASSET
@@ -1648,7 +1660,8 @@ namespace UnitySkills
             Tags = new[] { "yooasset", "report", "graph", "dependency", "analyze" },
             Outputs = new[] { "nodes", "edges" },
             ReadOnly = true,
-            RequiresPackages = new[] { "com.tuyoogame.yooasset" })]
+            RequiresPackages = new[] { "com.tuyoogame.yooasset" },
+            Mode = SkillMode.SemiAuto)]
         public static object GetDependencyGraph(string reportPath, string rootBundle = null, string rootAssetPath = null, int maxNodes = 200)
         {
 #if !YOO_ASSET
@@ -1704,7 +1717,8 @@ namespace UnitySkills
             Tags = new[] { "yooasset", "report", "compare", "diff", "analyze" },
             Outputs = new[] { "bundleDiff", "assetDiff" },
             ReadOnly = true,
-            RequiresPackages = new[] { "com.tuyoogame.yooasset" })]
+            RequiresPackages = new[] { "com.tuyoogame.yooasset" },
+            Mode = SkillMode.SemiAuto)]
         public static object CompareBuildReports(string oldReportPath, string newReportPath, int limit = 100)
         {
 #if !YOO_ASSET
@@ -1750,7 +1764,8 @@ namespace UnitySkills
             Tags = new[] { "yooasset", "report", "independent", "orphan", "cleanup" },
             Outputs = new[] { "total", "returned", "items" },
             ReadOnly = true,
-            RequiresPackages = new[] { "com.tuyoogame.yooasset" })]
+            RequiresPackages = new[] { "com.tuyoogame.yooasset" },
+            Mode = SkillMode.SemiAuto)]
         public static object ListIndependAssets(string reportPath, int limit = 100, int offset = 0)
         {
 #if !YOO_ASSET

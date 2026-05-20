@@ -153,14 +153,16 @@ namespace UnitySkills
             Category = SkillCategory.Debug, Operation = SkillOperation.Query,
             Tags = new[] { "errors", "console", "logs", "exceptions" },
             Outputs = new[] { "count", "logs" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object DebugGetErrors(int limit = 50) => DebugGetLogs("Error", null, limit);
 
         [UnitySkill("debug_get_logs", "Get console logs filtered by type (Error/Warning/Log) and content. Reads existing console history directly (no setup needed). Prefer console_get_logs for all-type queries with timestamp support.",
             Category = SkillCategory.Debug, Operation = SkillOperation.Query,
             Tags = new[] { "logs", "console", "filter", "warning", "error" },
             Outputs = new[] { "count", "logs" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object DebugGetLogs(string type = "Error", string filter = null, int limit = 50)
         {
             int targetMask = 0;
@@ -177,7 +179,8 @@ namespace UnitySkills
             Category = SkillCategory.Debug, Operation = SkillOperation.Query,
             Tags = new[] { "compilation", "compiling", "status", "check" },
             Outputs = new[] { "isCompiling", "isUpdating" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object DebugCheckCompilation()
         {
             return new
@@ -190,7 +193,8 @@ namespace UnitySkills
         [UnitySkill("debug_force_recompile", "Force script recompilation.",
             Category = SkillCategory.Debug, Operation = SkillOperation.Execute,
             Tags = new[] { "recompile", "refresh", "scripts", "compilation" },
-            Outputs = new[] { "message" })]
+            Outputs = new[] { "message" },
+            MayTriggerReload = true)]
         public static object DebugForceRecompile()
         {
             AssetDatabase.Refresh();
@@ -210,7 +214,8 @@ namespace UnitySkills
             Category = SkillCategory.Debug, Operation = SkillOperation.Query,
             Tags = new[] { "system", "info", "hardware", "unity-version" },
             Outputs = new[] { "unityVersion", "platform", "processorType", "systemMemorySize", "graphicsDeviceName" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object DebugGetSystemInfo()
         {
             return new
@@ -230,7 +235,8 @@ namespace UnitySkills
             Category = SkillCategory.Debug, Operation = SkillOperation.Query,
             Tags = new[] { "stack-trace", "log", "debug", "entry" },
             Outputs = new[] { "index", "message", "stackTrace" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object DebugGetStackTrace(int entryIndex)
         {
             if (!EnsureReflection())
@@ -259,7 +265,8 @@ namespace UnitySkills
             Category = SkillCategory.Debug, Operation = SkillOperation.Query,
             Tags = new[] { "assembly", "project", "compilation", "info" },
             Outputs = new[] { "count", "assemblies" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object DebugGetAssemblyInfo()
         {
             var assemblies = CompilationPipeline.GetAssemblies(AssembliesType.Player)
@@ -272,7 +279,8 @@ namespace UnitySkills
             Category = SkillCategory.Debug, Operation = SkillOperation.Query,
             Tags = new[] { "defines", "symbols", "preprocessor", "platform" },
             Outputs = new[] { "buildTargetGroup", "defines" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object DebugGetDefines()
         {
             var group = EditorUserBuildSettings.selectedBuildTargetGroup;
@@ -303,7 +311,8 @@ namespace UnitySkills
             Category = SkillCategory.Debug, Operation = SkillOperation.Query,
             Tags = new[] { "memory", "profiler", "usage", "heap" },
             Outputs = new[] { "totalAllocatedMB", "totalReservedMB", "monoUsedSizeMB", "monoHeapSizeMB" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object DebugGetMemoryInfo()
         {
             return new

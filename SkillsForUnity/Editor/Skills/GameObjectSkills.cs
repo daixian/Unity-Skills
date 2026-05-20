@@ -277,7 +277,8 @@ namespace UnitySkills
             Category = SkillCategory.GameObject, Operation = SkillOperation.Query,
             Tags = new[] { "search", "filter", "regex", "tag", "layer" },
             Outputs = new[] { "list", "instanceId", "path", "tag", "layer" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object GameObjectFind(string name = null, bool useRegex = false, string tag = null, string layer = null, string component = null, int limit = 50)
         {
             // Efficiency: If tag is provided, use FindGameObjectsWithTag (faster).
@@ -629,7 +630,8 @@ namespace UnitySkills
             Tags = new[] { "inspect", "info", "details", "components" },
             Outputs = new[] { "instanceId", "path", "tag", "layer", "components", "children" },
             RequiresInput = new[] { "gameObject" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object GameObjectGetInfo(string name = null, int instanceId = 0, string path = null)
         {
             var (go, error) = GameObjectFinder.FindOrError(name, instanceId, path);

@@ -71,7 +71,8 @@ namespace UnitySkills
         [UnitySkill("script_create_batch", "Create multiple scripts efficiently. Before batch-generating gameplay scripts, actively consider coupling, performance, and maintainability for each class role. items: JSON array of {scriptName, folder, template, namespace}", TracksWorkflow = true,
             Category = SkillCategory.Script, Operation = SkillOperation.Create,
             Tags = new[] { "script", "batch", "create", "bulk" },
-            Outputs = new[] { "totalCount", "successCount", "results" })]
+            Outputs = new[] { "totalCount", "successCount", "results" },
+            MayTriggerReload = true)]
         public static object ScriptCreateBatch(string items)
         {
             return BatchExecutor.Execute<BatchScriptItem>(items, item =>
@@ -103,7 +104,8 @@ namespace UnitySkills
             Tags = new[] { "script", "read", "content", "source" },
             Outputs = new[] { "path", "lines", "content" },
             RequiresInput = new[] { "scriptPath" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ScriptRead(string scriptPath)
         {
             if (Validate.SafePath(scriptPath, "scriptPath") is object pathErr) return pathErr;
@@ -149,7 +151,8 @@ namespace UnitySkills
             Category = SkillCategory.Script, Operation = SkillOperation.Query,
             Tags = new[] { "script", "search", "pattern", "grep" },
             Outputs = new[] { "pattern", "matchCount", "matches" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ScriptFindInFile(string pattern, string folder = "Assets", bool isRegex = false, int limit = 50)
         {
             if (!string.IsNullOrEmpty(folder) && Validate.SafePath(folder, "folder") is object folderErr) return folderErr;
@@ -255,7 +258,8 @@ namespace UnitySkills
             Category = SkillCategory.Script, Operation = SkillOperation.Query,
             Tags = new[] { "script", "list", "project", "files" },
             Outputs = new[] { "count", "scripts" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ScriptList(string folder = "Assets", string filter = null, int limit = 100)
         {
             var guids = AssetDatabase.FindAssets("t:MonoScript", new[] { folder });
@@ -275,7 +279,8 @@ namespace UnitySkills
             Tags = new[] { "script", "info", "class", "reflection" },
             Outputs = new[] { "path", "className", "baseClass", "publicMethods", "publicFields" },
             RequiresInput = new[] { "scriptPath" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ScriptGetInfo(string scriptPath)
         {
             var monoScript = AssetDatabase.LoadAssetAtPath<MonoScript>(scriptPath);
@@ -361,7 +366,8 @@ namespace UnitySkills
             Tags = new[] { "script", "compile", "diagnostics", "errors" },
             Outputs = new[] { "scriptPath", "isCompiling", "hasErrors", "errorCount", "errors" },
             RequiresInput = new[] { "scriptPath" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ScriptGetCompileFeedback(string scriptPath, int limit = DefaultDiagnosticLimit)
         {
             if (Validate.SafePath(scriptPath, "scriptPath") is object pathErr) return pathErr;

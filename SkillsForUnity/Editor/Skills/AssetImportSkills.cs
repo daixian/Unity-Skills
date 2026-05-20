@@ -375,7 +375,8 @@ namespace UnitySkills
             Tags = new[] { "texture", "import", "settings", "inspect" },
             Outputs = new[] { "assetPath", "textureType", "maxSize", "compression", "readable", "mipmaps" },
             RequiresInput = new[] { "textureAsset" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object TextureGetImportSettings(string assetPath)
         {
             var importer = AssetImporter.GetAtPath(assetPath) as TextureImporter;
@@ -400,7 +401,8 @@ namespace UnitySkills
             Tags = new[] { "model", "fbx", "import", "settings", "inspect" },
             Outputs = new[] { "assetPath", "globalScale", "importAnimation", "meshCompression", "readable", "generateColliders" },
             RequiresInput = new[] { "modelAsset" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ModelGetImportSettings(string assetPath)
         {
             var importer = AssetImporter.GetAtPath(assetPath) as ModelImporter;
@@ -424,7 +426,8 @@ namespace UnitySkills
             Tags = new[] { "audio", "import", "settings", "inspect", "clip" },
             Outputs = new[] { "assetPath", "forceToMono", "loadInBackground", "loadType", "compressionFormat", "quality" },
             RequiresInput = new[] { "audioAsset" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object AudioGetImportSettings(string assetPath)
         {
             var importer = AssetImporter.GetAtPath(assetPath) as AudioImporter;
@@ -464,7 +467,8 @@ namespace UnitySkills
             Tags = new[] { "asset", "labels", "metadata", "inspect" },
             Outputs = new[] { "assetPath", "labels" },
             RequiresInput = new[] { "assetPath" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object AssetGetLabels(string assetPath)
         {
             var asset = AssetDatabase.LoadMainAssetAtPath(assetPath);

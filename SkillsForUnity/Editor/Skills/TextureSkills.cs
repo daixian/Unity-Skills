@@ -15,7 +15,8 @@ namespace UnitySkills
             Tags = new[] { "texture", "import", "settings", "inspect" },
             Outputs = new[] { "textureType", "sRGB", "maxTextureSize", "compression", "filterMode" },
             RequiresInput = new[] { "assetPath" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object TextureGetSettings(string assetPath)
         {
             if (Validate.Required(assetPath, "assetPath") is object err) return err;
@@ -251,7 +252,8 @@ namespace UnitySkills
             Category = SkillCategory.Texture, Operation = SkillOperation.Query,
             Tags = new[] { "texture", "search", "find", "asset" },
             Outputs = new[] { "totalFound", "textures" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object TextureFindAssets(string filter = "", int limit = 50)
         {
             var guids = AssetDatabase.FindAssets("t:Texture2D " + filter);
@@ -270,7 +272,8 @@ namespace UnitySkills
             Tags = new[] { "texture", "info", "dimensions", "memory" },
             Outputs = new[] { "width", "height", "format", "mipmapCount", "memorySizeKB" },
             RequiresInput = new[] { "assetPath" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object TextureGetInfo(string assetPath)
         {
             if (Validate.Required(assetPath, "assetPath") is object err) return err;
@@ -335,7 +338,8 @@ namespace UnitySkills
             Tags = new[] { "texture", "platform", "settings", "inspect" },
             Outputs = new[] { "overridden", "maxTextureSize", "format", "compressionQuality" },
             RequiresInput = new[] { "assetPath" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object TextureGetPlatformSettings(string assetPath, string platform)
         {
             if (Validate.Required(assetPath, "assetPath") is object err) return err;
@@ -376,7 +380,8 @@ namespace UnitySkills
             Category = SkillCategory.Texture, Operation = SkillOperation.Query,
             Tags = new[] { "texture", "search", "size", "dimensions" },
             Outputs = new[] { "count", "textures" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object TextureFindBySize(int minSize = 0, int maxSize = 99999, int limit = 50)
         {
             var guids = AssetDatabase.FindAssets("t:Texture2D");

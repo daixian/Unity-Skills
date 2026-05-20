@@ -18,7 +18,8 @@ namespace UnitySkills
             Tags = new[] { "event", "listeners", "unityevent", "inspect" },
             Outputs = new[] { "gameObject", "component", "eventName", "listenerCount", "listeners" },
             RequiresInput = new[] { "gameObject", "componentName", "eventName" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object EventGetListeners(string name = null, int instanceId = 0, string path = null, string componentName = null, string eventName = null)
         {
             var (go, findErr) = GameObjectFinder.FindOrError(name: name, instanceId: instanceId, path: path);
@@ -341,7 +342,8 @@ namespace UnitySkills
             Tags = new[] { "event", "list", "fields", "component" },
             Outputs = new[] { "component", "count", "events" },
             RequiresInput = new[] { "gameObject", "componentName" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object EventListEvents(string name = null, int instanceId = 0, string path = null, string componentName = null)
         {
             var (go, findErr) = GameObjectFinder.FindOrError(name: name, instanceId: instanceId, path: path);
@@ -419,7 +421,8 @@ namespace UnitySkills
             Tags = new[] { "event", "listener", "count" },
             Outputs = new[] { "count" },
             RequiresInput = new[] { "gameObject", "componentName", "eventName" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object EventGetListenerCount(string name = null, int instanceId = 0, string path = null, string componentName = null, string eventName = null)
         {
             var (evt, comp, err) = FindEvent(name, instanceId, path, componentName, eventName);

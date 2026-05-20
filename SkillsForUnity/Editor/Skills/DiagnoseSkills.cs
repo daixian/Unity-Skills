@@ -16,7 +16,8 @@ namespace UnitySkills
             Operation = SkillOperation.Analyze | SkillOperation.Query,
             Tags = new[] { "diagnose", "health", "console", "workflow", "compile", "triage" },
             Outputs = new[] { "summary", "compile", "console", "workflow", "server", "recentJobs" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object Diagnose(int errorLimit = 20, bool includeWarnings = true, bool includeRecentJobs = true)
         {
             errorLimit = Mathf.Clamp(errorLimit, 1, 200);

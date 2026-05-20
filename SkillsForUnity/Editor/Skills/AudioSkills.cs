@@ -16,7 +16,8 @@ namespace UnitySkills
             Tags = new[] { "audio", "import", "settings", "clip" },
             Outputs = new[] { "path", "forceToMono", "loadType", "compressionFormat", "quality" },
             RequiresInput = new[] { "audioAsset" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object AudioGetSettings(string assetPath)
         {
             if (Validate.Required(assetPath, "assetPath") is object err) return err;
@@ -203,7 +204,8 @@ namespace UnitySkills
             Category = SkillCategory.Audio, Operation = SkillOperation.Query,
             Tags = new[] { "audio", "clip", "search", "find", "asset" },
             Outputs = new[] { "totalFound", "showing", "clips" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object AudioFindClips(string filter = "", int limit = 50)
         {
             var guids = AssetDatabase.FindAssets("t:AudioClip " + filter);
@@ -221,7 +223,8 @@ namespace UnitySkills
             Tags = new[] { "audio", "clip", "info", "inspect" },
             Outputs = new[] { "name", "path", "length", "channels", "frequency", "samples", "loadType" },
             RequiresInput = new[] { "audioAsset" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object AudioGetClipInfo(string assetPath)
         {
             if (Validate.Required(assetPath, "assetPath") is object err) return err;
@@ -263,7 +266,8 @@ namespace UnitySkills
             Tags = new[] { "audio", "source", "info", "inspect" },
             Outputs = new[] { "gameObject", "clip", "volume", "pitch", "loop", "spatialBlend" },
             RequiresInput = new[] { "gameObject" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object AudioGetSourceInfo(string name = null, int instanceId = 0, string path = null)
         {
             var (source, error) = GameObjectFinder.FindComponentOrError<AudioSource>(name, instanceId, path);
@@ -304,7 +308,8 @@ namespace UnitySkills
             Category = SkillCategory.Audio, Operation = SkillOperation.Query,
             Tags = new[] { "audio", "source", "find", "scene", "search" },
             Outputs = new[] { "totalFound", "showing", "sources" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object AudioFindSourcesInScene(int limit = 50)
         {
             var sources = FindHelper.FindAll<AudioSource>();

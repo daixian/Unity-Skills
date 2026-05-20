@@ -161,7 +161,8 @@ namespace UnitySkills
             Tags = new[] { "light", "info", "inspect" },
             Outputs = new[] { "lightType", "color", "intensity", "range", "shadows", "enabled" },
             RequiresInput = new[] { "gameObject" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object LightGetInfo(string name = null, int instanceId = 0, string path = null)
         {
             var (go, error) = GameObjectFinder.FindOrError(name, instanceId, path);
@@ -192,7 +193,8 @@ namespace UnitySkills
             Category = SkillCategory.Light, Operation = SkillOperation.Query,
             Tags = new[] { "light", "find", "search", "scene" },
             Outputs = new[] { "count", "lights" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object LightFindAll(string lightType = null, int limit = 50)
         {
             var lights = FindHelper.FindAll<Light>();
@@ -384,7 +386,8 @@ namespace UnitySkills
             Category = SkillCategory.Light, Operation = SkillOperation.Query,
             Tags = new[] { "lightmap", "baking", "gi", "settings" },
             Outputs = new[] { "bakedGI", "realtimeGI", "lightmapSize", "isRunning", "lightmapCount" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object LightGetLightmapSettings()
         {
             var settings = Lightmapping.lightingSettings;

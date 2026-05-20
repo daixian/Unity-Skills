@@ -17,7 +17,8 @@ namespace UnitySkills
             Category = SkillCategory.Cleaner, Operation = SkillOperation.Analyze,
             Tags = new[] { "cleaner", "unused", "assets", "dependencies" },
             Outputs = new[] { "assetType", "potentiallyUnusedCount", "assets" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object CleanerFindUnusedAssets(
             string assetType = "Material",
             string searchPath = "Assets",
@@ -85,7 +86,8 @@ namespace UnitySkills
             Category = SkillCategory.Cleaner, Operation = SkillOperation.Analyze,
             Tags = new[] { "cleaner", "duplicates", "hash", "files" },
             Outputs = new[] { "duplicateGroupCount", "totalWastedBytes", "totalWastedMB", "groups" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object CleanerFindDuplicates(
             string assetType = "Texture2D",
             string searchPath = "Assets",
@@ -163,7 +165,8 @@ namespace UnitySkills
             Category = SkillCategory.Cleaner, Operation = SkillOperation.Analyze,
             Tags = new[] { "cleaner", "missing", "references", "scripts" },
             Outputs = new[] { "issueCount", "missingScripts", "missingReferences", "issues" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object CleanerFindMissingReferences(bool includeInactive = true)
         {
             var issues = new List<object>();
@@ -365,7 +368,8 @@ namespace UnitySkills
             Tags = new[] { "cleaner", "usage", "references", "dependencies" },
             Outputs = new[] { "asset", "usedByCount", "usedBy" },
             RequiresInput = new[] { "assetPath" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object CleanerGetAssetUsage(string assetPath, int limit = 50)
         {
             if (Validate.SafePath(assetPath, "assetPath") is object pathErr) return pathErr;
@@ -415,7 +419,8 @@ namespace UnitySkills
             Category = SkillCategory.Cleaner, Operation = SkillOperation.Analyze,
             Tags = new[] { "cleaner", "empty", "folders", "project" },
             Outputs = new[] { "count", "folders" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object CleanerFindEmptyFolders(string searchPath = "Assets")
         {
             var empty = new List<string>();
@@ -439,7 +444,8 @@ namespace UnitySkills
             Category = SkillCategory.Cleaner, Operation = SkillOperation.Analyze,
             Tags = new[] { "cleaner", "large", "assets", "size" },
             Outputs = new[] { "count", "assets" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object CleanerFindLargeAssets(string searchPath = "Assets", int limit = 20, long minSizeBytes = 0)
         {
             var files = Directory.GetFiles(searchPath, "*.*", SearchOption.AllDirectories)
@@ -504,7 +510,8 @@ namespace UnitySkills
             Tags = new[] { "cleaner", "dependencies", "tree", "asset" },
             Outputs = new[] { "assetPath", "dependencyCount", "dependencies" },
             RequiresInput = new[] { "assetPath" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object CleanerGetDependencyTree(string assetPath, bool recursive = true)
         {
             if (!SkillsCommon.PathExists(assetPath))

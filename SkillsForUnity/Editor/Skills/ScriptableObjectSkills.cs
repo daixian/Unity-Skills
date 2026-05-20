@@ -45,7 +45,8 @@ namespace UnitySkills
             Tags = new[] { "scriptableobject", "get", "inspect", "properties" },
             Outputs = new[] { "path", "typeName", "fields", "properties" },
             RequiresInput = new[] { "assetPath" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ScriptableObjectGet(string assetPath)
         {
             var asset = AssetDatabase.LoadAssetAtPath<ScriptableObject>(assetPath);
@@ -125,7 +126,8 @@ namespace UnitySkills
             Category = SkillCategory.ScriptableObject, Operation = SkillOperation.Query,
             Tags = new[] { "scriptableobject", "types", "list", "search" },
             Outputs = new[] { "count", "types" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ScriptableObjectListTypes(string filter = null, int limit = 50)
         {
             var types = SkillsCommon.GetAllLoadedTypes()
@@ -207,7 +209,8 @@ namespace UnitySkills
             Category = SkillCategory.ScriptableObject, Operation = SkillOperation.Query,
             Tags = new[] { "scriptableobject", "find", "search", "asset" },
             Outputs = new[] { "count", "assets" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ScriptableObjectFind(string typeName, string searchPath = "Assets", int limit = 50)
         {
             var guids = AssetDatabase.FindAssets($"t:{typeName}", new[] { searchPath });
@@ -224,7 +227,8 @@ namespace UnitySkills
             Tags = new[] { "scriptableobject", "export", "json", "serialize" },
             Outputs = new[] { "json", "path" },
             RequiresInput = new[] { "assetPath" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ScriptableObjectExportJson(string assetPath, string savePath = null)
         {
             var asset = AssetDatabase.LoadAssetAtPath<ScriptableObject>(assetPath);

@@ -13,7 +13,8 @@ namespace UnitySkills
             Category = SkillCategory.Package, Operation = SkillOperation.Query,
             Tags = new[] { "package", "list", "upm", "installed" },
             Outputs = new[] { "count", "packages" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object PackageList()
         {
             var packages = PackageManagerHelper.InstalledPackages;
@@ -29,7 +30,8 @@ namespace UnitySkills
             Tags = new[] { "package", "check", "version", "installed" },
             Outputs = new[] { "packageId", "installed", "version" },
             RequiresInput = new[] { "packageId" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object PackageCheck(string packageId)
         {
             if (Validate.Required(packageId, "packageId") is object err) return err;
@@ -278,7 +280,8 @@ namespace UnitySkills
             Category = SkillCategory.Package, Operation = SkillOperation.Query,
             Tags = new[] { "package", "cinemachine", "status", "version" },
             Outputs = new[] { "cinemachine", "splines" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object PackageGetCinemachineStatus()
         {
             var status = PackageManagerHelper.GetCinemachineStatus();
@@ -303,7 +306,8 @@ namespace UnitySkills
             Tags = new[] { "package", "search", "find", "upm" },
             Outputs = new[] { "query", "count", "packages" },
             RequiresInput = new[] { "query" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object PackageSearch(string query)
         {
             if (Validate.Required(query, "query") is object err) return err;
@@ -326,7 +330,8 @@ namespace UnitySkills
             Tags = new[] { "package", "dependencies", "upm", "info" },
             Outputs = new[] { "packageId", "version", "dependencyCount", "dependencies" },
             RequiresInput = new[] { "packageId" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object PackageGetDependencies(string packageId)
         {
             if (Validate.Required(packageId, "packageId") is object err) return err;
@@ -347,7 +352,8 @@ namespace UnitySkills
             Tags = new[] { "package", "versions", "upm", "upgrade" },
             Outputs = new[] { "packageId", "currentVersion", "compatibleVersion", "latestVersion", "allVersions" },
             RequiresInput = new[] { "packageId" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object PackageGetVersions(string packageId)
         {
             if (Validate.Required(packageId, "packageId") is object err) return err;

@@ -237,7 +237,8 @@ namespace UnitySkills
             Tags = new[] { "list", "inspect", "enumerate" },
             Outputs = new[] { "gameObject", "instanceId", "path", "components" },
             RequiresInput = new[] { "gameObject" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ComponentList(string name = null, int instanceId = 0, string path = null, bool includeProperties = false)
         {
             var (go, error) = GameObjectFinder.FindOrError(name, instanceId, path);
@@ -445,7 +446,8 @@ namespace UnitySkills
             Tags = new[] { "property", "field", "inspect", "reflection" },
             Outputs = new[] { "gameObject", "component", "properties", "fields" },
             RequiresInput = new[] { "gameObject", "component" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ComponentGetProperties(string name = null, int instanceId = 0, string path = null, string componentType = null, bool includePrivate = false)
         {
             if (Validate.Required(componentType, "componentType") is object err) return err;

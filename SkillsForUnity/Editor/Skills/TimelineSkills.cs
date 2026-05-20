@@ -176,7 +176,8 @@ namespace UnitySkills
             Tags = new[] { "timeline", "track", "list", "inspect" },
             Outputs = new[] { "count", "tracks" },
             RequiresInput = new[] { "director" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object TimelineListTracks(string name = null, int instanceId = 0, string path = null)
         {
             var (timeline, director, err) = GetTimeline(name, instanceId, path);

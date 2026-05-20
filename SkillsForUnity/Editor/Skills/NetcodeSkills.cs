@@ -43,7 +43,8 @@ namespace UnitySkills
             Category = SkillCategory.Netcode, Operation = SkillOperation.Analyze,
             Tags = new[] { "netcode", "ngo", "multiplayer", "validation", "diagnostic" },
             Outputs = new[] { "installed", "managerCount", "transportType", "issueCount", "issues" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object CheckSetup(bool verbose = false)
         {
 #if !NETCODE_GAMEOBJECTS
@@ -226,7 +227,8 @@ namespace UnitySkills
             Category = SkillCategory.Netcode, Operation = SkillOperation.Query,
             Tags = new[] { "netcode", "ngo", "manager", "info" },
             Outputs = new[] { "found", "name", "config", "runtime" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object GetManagerInfo(string name = null)
         {
 #if !NETCODE_GAMEOBJECTS
@@ -440,7 +442,8 @@ namespace UnitySkills
             Category = SkillCategory.Netcode, Operation = SkillOperation.Query,
             Tags = new[] { "netcode", "ngo", "transport", "info" },
             Outputs = new[] { "found", "type", "address", "port", "serverListenAddress" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object GetTransportInfo(string name = null)
         {
 #if !NETCODE_GAMEOBJECTS
@@ -594,7 +597,8 @@ namespace UnitySkills
             Category = SkillCategory.Netcode, Operation = SkillOperation.Query,
             Tags = new[] { "netcode", "ngo", "networkobject", "list" },
             Outputs = new[] { "count", "objects" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ListNetworkObjects(bool includeInactive = true)
         {
 #if !NETCODE_GAMEOBJECTS
@@ -623,7 +627,8 @@ namespace UnitySkills
             Category = SkillCategory.Netcode, Operation = SkillOperation.Query,
             Tags = new[] { "netcode", "ngo", "networkobject", "info" },
             Outputs = new[] { "found", "networkObjectId", "ownerClientId", "isSpawned", "isPlayerObject" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object GetNetworkObjectInfo(string name = null, int instanceId = 0, string path = null)
         {
 #if !NETCODE_GAMEOBJECTS
@@ -806,7 +811,8 @@ namespace UnitySkills
             Category = SkillCategory.Netcode, Operation = SkillOperation.Query,
             Tags = new[] { "netcode", "ngo", "prefabs", "list" },
             Outputs = new[] { "count", "entries" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ListNetworkPrefabs(string listPath)
         {
 #if !NETCODE_GAMEOBJECTS
@@ -1199,7 +1205,8 @@ namespace UnitySkills
             Category = SkillCategory.Netcode, Operation = SkillOperation.Query,
             Tags = new[] { "netcode", "ngo", "networkbehaviour", "list" },
             Outputs = new[] { "count", "behaviours" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ListNetworkBehaviours(bool includeInactive = true)
         {
 #if !NETCODE_GAMEOBJECTS
@@ -1274,7 +1281,8 @@ namespace UnitySkills
             Category = SkillCategory.Netcode, Operation = SkillOperation.Query,
             Tags = new[] { "netcode", "ngo", "spawn", "manager", "runtime" },
             Outputs = new[] { "running", "spawnedCount", "objects" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object GetSpawnManagerInfo(string name = null)
         {
 #if !NETCODE_GAMEOBJECTS
@@ -1307,7 +1315,8 @@ namespace UnitySkills
             Category = SkillCategory.Netcode, Operation = SkillOperation.Query,
             Tags = new[] { "netcode", "ngo", "scene", "manager", "runtime" },
             Outputs = new[] { "running", "activeScene", "loadedScenes" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object GetSceneManagerInfo(string name = null)
         {
 #if !NETCODE_GAMEOBJECTS
@@ -1429,7 +1438,8 @@ namespace UnitySkills
             Category = SkillCategory.Netcode, Operation = SkillOperation.Query,
             Tags = new[] { "netcode", "ngo", "runtime", "status" },
             Outputs = new[] { "isListening", "isHost", "isServer", "isClient", "localClientId", "connectedClientsCount", "networkTime" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object GetStatus(string name = null)
         {
 #if !NETCODE_GAMEOBJECTS

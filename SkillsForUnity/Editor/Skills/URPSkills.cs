@@ -19,7 +19,8 @@ namespace UnitySkills
             Category = SkillCategory.URP, Operation = SkillOperation.Query,
             Tags = new[] { "urp", "asset", "renderer", "info" },
             Outputs = new[] { "asset", "renderers" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object URPGetInfo(string assetPath = null) => RenderPipelineSkillsCommon.NoURP();
 
         [UnitySkill("urp_set_asset_settings", "Modify key settings on a URP asset",
@@ -34,14 +35,16 @@ namespace UnitySkills
             Category = SkillCategory.URP, Operation = SkillOperation.Query,
             Tags = new[] { "urp", "renderers", "list" },
             Outputs = new[] { "count", "renderers" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object URPListRenderers(string assetPath = null) => RenderPipelineSkillsCommon.NoURP();
 
         [UnitySkill("urp_list_renderer_features", "List renderer features on a URP renderer",
             Category = SkillCategory.URP, Operation = SkillOperation.Query,
             Tags = new[] { "urp", "renderer feature", "list" },
             Outputs = new[] { "count", "features" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object URPListRendererFeatures(string assetPath = null, int rendererIndex = -1, string rendererDataPath = null) => RenderPipelineSkillsCommon.NoURP();
 
         [UnitySkill("urp_add_renderer_feature", "Add a safe built-in renderer feature to a URP renderer",
@@ -67,7 +70,8 @@ namespace UnitySkills
             Tags = new[] { "urp", "asset", "renderer", "info" },
             Outputs = new[] { "asset", "renderers" },
             ReadOnly = true,
-            RequiresPackages = new[] { "com.unity.render-pipelines.universal" })]
+            RequiresPackages = new[] { "com.unity.render-pipelines.universal" },
+            Mode = SkillMode.SemiAuto)]
         public static object URPGetInfo(string assetPath = null)
         {
             var asset = LoadAssetOrError(assetPath, out var error);
@@ -133,7 +137,8 @@ namespace UnitySkills
             Tags = new[] { "urp", "renderers", "list" },
             Outputs = new[] { "count", "renderers" },
             ReadOnly = true,
-            RequiresPackages = new[] { "com.unity.render-pipelines.universal" })]
+            RequiresPackages = new[] { "com.unity.render-pipelines.universal" },
+            Mode = SkillMode.SemiAuto)]
         public static object URPListRenderers(string assetPath = null)
         {
             var asset = LoadAssetOrError(assetPath, out var error);
@@ -154,7 +159,8 @@ namespace UnitySkills
             Tags = new[] { "urp", "renderer feature", "list" },
             Outputs = new[] { "count", "features" },
             ReadOnly = true,
-            RequiresPackages = new[] { "com.unity.render-pipelines.universal" })]
+            RequiresPackages = new[] { "com.unity.render-pipelines.universal" },
+            Mode = SkillMode.SemiAuto)]
         public static object URPListRendererFeatures(string assetPath = null, int rendererIndex = -1, string rendererDataPath = null)
         {
             var asset = LoadAssetOrError(assetPath, out var error);

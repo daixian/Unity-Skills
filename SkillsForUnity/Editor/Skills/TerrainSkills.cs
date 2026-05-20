@@ -57,7 +57,8 @@ namespace UnitySkills
             Tags = new[] { "terrain", "info", "resolution", "layers" },
             Outputs = new[] { "name", "size", "heightmapResolution", "terrainLayerCount", "layers" },
             RequiresInput = new[] { "terrain" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object TerrainGetInfo(string name = null, int instanceId = 0)
         {
             var terrain = FindTerrain(name, instanceId);
@@ -103,7 +104,8 @@ namespace UnitySkills
             Tags = new[] { "terrain", "height", "sample", "elevation" },
             Outputs = new[] { "height", "worldY" },
             RequiresInput = new[] { "terrain" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object TerrainGetHeight(float worldX, float worldZ, string name = null, int instanceId = 0)
         {
             var terrain = FindTerrain(name, instanceId);

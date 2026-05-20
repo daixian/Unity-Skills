@@ -30,7 +30,8 @@ namespace UnitySkills
             "Get DOTween installation status, Pro availability, DOTweenSettings presence, and visible module count. Works with DOTween Free or Pro.",
             Category = SkillCategory.DOTween, Operation = SkillOperation.Query,
             Tags = new[] { "dotween", "free", "status", "installed", "modules" },
-            Outputs = new[] { "isDOTweenInstalled", "isDOTweenProInstalled", "settingsFound", "moduleCount" })]
+            Outputs = new[] { "isDOTweenInstalled", "isDOTweenProInstalled", "settingsFound", "moduleCount" },
+            Mode = SkillMode.SemiAuto)]
         public static object DOTweenGetStatus()
         {
             var dotweenType = DOTweenReflectionHelper.FindTypeInAssemblies(DOTweenReflectionHelper.DOTweenTypeName);
@@ -55,7 +56,8 @@ namespace UnitySkills
             "Read common fields from Resources/DOTweenSettings.asset. Works with DOTween Free or Pro.",
             Category = SkillCategory.DOTween, Operation = SkillOperation.Query,
             Tags = new[] { "dotween", "free", "settings", "read", "query" },
-            Outputs = new[] { "success", "path", "fields" })]
+            Outputs = new[] { "success", "path", "fields" },
+            Mode = SkillMode.SemiAuto)]
         public static object DOTweenSettingsGet()
         {
             if (!DOTweenReflectionHelper.IsDOTweenInstalled) return NoDOTween();
@@ -75,7 +77,8 @@ namespace UnitySkills
             "Find DOTweenSettings assets in the project. Works with DOTween Free or Pro.",
             Category = SkillCategory.DOTween, Operation = SkillOperation.Query,
             Tags = new[] { "dotween", "free", "settings", "find", "asset" },
-            Outputs = new[] { "count", "paths", "resourcesLoadPath" })]
+            Outputs = new[] { "count", "paths", "resourcesLoadPath" },
+            Mode = SkillMode.SemiAuto)]
         public static object DOTweenSettingsFind()
         {
             var paths = FindDOTweenSettingsPaths();
@@ -93,7 +96,8 @@ namespace UnitySkills
             "Validate basic DOTweenSettings health: missing asset, invalid capacities, SafeMode/logBehaviour visibility. Works with DOTween Free or Pro.",
             Category = SkillCategory.DOTween, Operation = SkillOperation.Query,
             Tags = new[] { "dotween", "free", "settings", "validate", "diagnostic" },
-            Outputs = new[] { "success", "isValid", "issues", "warnings" })]
+            Outputs = new[] { "success", "isValid", "issues", "warnings" },
+            Mode = SkillMode.SemiAuto)]
         public static object DOTweenSettingsValidate()
         {
             if (!DOTweenReflectionHelper.IsDOTweenInstalled) return NoDOTween();
@@ -137,7 +141,8 @@ namespace UnitySkills
             "List visible DOTween module and extension types loaded in the current Unity domain. Works with DOTween Free or Pro.",
             Category = SkillCategory.DOTween, Operation = SkillOperation.Query,
             Tags = new[] { "dotween", "free", "modules", "extensions", "reflection" },
-            Outputs = new[] { "count", "types" })]
+            Outputs = new[] { "count", "types" },
+            Mode = SkillMode.SemiAuto)]
         public static object DOTweenListModules(bool includeMethods = false, int methodLimit = 20)
         {
             if (!DOTweenReflectionHelper.IsDOTweenInstalled) return NoDOTween();
@@ -168,7 +173,8 @@ namespace UnitySkills
             "List public DOTween shortcut/extension methods, optionally filtered by target type and method prefix. Works with DOTween Free or Pro.",
             Category = SkillCategory.DOTween, Operation = SkillOperation.Query,
             Tags = new[] { "dotween", "free", "shortcut", "extension", "methods" },
-            Outputs = new[] { "count", "methods" })]
+            Outputs = new[] { "count", "methods" },
+            Mode = SkillMode.SemiAuto)]
         public static object DOTweenListShortcuts(string targetType = null, string methodPrefix = null, int limit = 100)
         {
             if (!DOTweenReflectionHelper.IsDOTweenInstalled) return NoDOTween();
@@ -541,7 +547,8 @@ namespace UnitySkills
             Tags = new[] { "dotween", "inspect", "animation", "pro" },
             Outputs = new[] { "fields" },
             RequiresInput = new[] { "gameObject" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object DOTweenProGetAnimation(
             string target = null, int targetInstanceId = 0, string targetPath = null,
             int animationIndex = 0)
@@ -562,7 +569,8 @@ namespace UnitySkills
             Category = SkillCategory.DOTween, Operation = SkillOperation.Query,
             Tags = new[] { "dotween", "list", "animation", "pro" },
             Outputs = new[] { "animations" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object DOTweenProListAnimations(
             string target = null, int targetInstanceId = 0, string targetPath = null,
             bool recursive = false)

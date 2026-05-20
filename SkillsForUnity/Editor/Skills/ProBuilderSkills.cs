@@ -680,7 +680,8 @@ namespace UnitySkills
             Tags = new[] { "probuilder", "info", "mesh", "topology" },
             Outputs = new[] { "vertexCount", "faceCount", "edgeCount", "triangleCount", "shapeType", "bounds" },
             RequiresInput = new[] { "proBuilderMesh" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ProBuilderGetInfo(
             string name = null, int instanceId = 0, string path = null)
         {
@@ -1074,7 +1075,8 @@ namespace UnitySkills
             Tags = new[] { "probuilder", "vertex", "position", "topology" },
             Outputs = new[] { "vertexCount", "faceCount", "vertices" },
             RequiresInput = new[] { "proBuilderMesh" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ProBuilderGetVertices(
             string name = null, int instanceId = 0, string path = null,
             string vertexIndexes = null, bool verbose = true)

@@ -57,7 +57,8 @@ namespace UnitySkills
             Category = SkillCategory.Console, Operation = SkillOperation.Query,
             Tags = new[] { "console", "logs", "filter", "errors" },
             Outputs = new[] { "count", "logs", "source" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ConsoleGetLogs(string type = "All", string filter = null, int limit = 100)
         {
             if (_capturing)
@@ -205,7 +206,8 @@ namespace UnitySkills
             Category = SkillCategory.Console, Operation = SkillOperation.Query,
             Tags = new[] { "console", "stats", "count", "summary" },
             Outputs = new[] { "total", "logs", "warnings", "errors", "source" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object ConsoleGetStats()
         {
             if (_capturing || _logs.Count > 0)

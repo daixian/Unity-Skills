@@ -71,7 +71,8 @@ namespace UnitySkills
             Category = SkillCategory.Editor, Operation = SkillOperation.Query,
             Tags = new[] { "selection", "current", "active" },
             Outputs = new[] { "count", "objects", "instanceId" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object EditorGetSelection()
         {
             var selected = Selection.gameObjects.Select(go => new
@@ -113,7 +114,8 @@ namespace UnitySkills
             Category = SkillCategory.Editor, Operation = SkillOperation.Query,
             Tags = new[] { "state", "status", "info" },
             Outputs = new[] { "isPlaying", "isPaused", "isCompiling", "unityVersion" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object EditorGetState()
         {
             return new
@@ -144,7 +146,8 @@ namespace UnitySkills
             Category = SkillCategory.Editor, Operation = SkillOperation.Query,
             Tags = new[] { "tags", "list", "config" },
             Outputs = new[] { "tags" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object EditorGetTags()
         {
             return new { tags = InternalEditorUtility.tags };
@@ -154,7 +157,8 @@ namespace UnitySkills
             Category = SkillCategory.Editor, Operation = SkillOperation.Query,
             Tags = new[] { "layers", "list", "config" },
             Outputs = new[] { "layers" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object EditorGetLayers()
         {
             var layers = Enumerable.Range(0, 32)
@@ -169,7 +173,8 @@ namespace UnitySkills
             Category = SkillCategory.Editor, Operation = SkillOperation.Query,
             Tags = new[] { "context", "selection", "workspace", "overview" },
             Outputs = new[] { "selectedGameObjects", "selectedAssets", "activeScene", "focusedWindow" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object EditorGetContext(bool includeComponents = false, bool includeChildren = false)
         {
             // 1. Hierarchy 选中的 GameObjects

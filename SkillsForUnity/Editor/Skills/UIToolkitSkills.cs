@@ -79,7 +79,8 @@ namespace UnitySkills
             Tags = new[] { "read", "uss", "uxml", "file" },
             Outputs = new[] { "path", "type", "lines", "content" },
             RequiresInput = new[] { "filePath" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object UitkReadFile(string filePath)
         {
             if (Validate.SafePath(filePath, "filePath") is object pathErr) return pathErr;
@@ -145,7 +146,8 @@ namespace UnitySkills
             Category = SkillCategory.UIToolkit, Operation = SkillOperation.Query,
             Tags = new[] { "find", "search", "uss", "uxml" },
             Outputs = new[] { "count", "files" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object UitkFindFiles(string type = "all", string folder = null, string filter = null, int limit = 200)
         {
             var searchFolder = string.IsNullOrEmpty(folder) ? "Assets" : folder;
@@ -413,7 +415,8 @@ namespace UnitySkills
             Tags = new[] { "panel-settings", "inspect", "read", "properties" },
             Outputs = new[] { "path", "scaleMode", "referenceResolution", "screenMatchMode", "dynamicAtlasSettings" },
             RequiresInput = new[] { "assetPath" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object UitkGetPanelSettings(string assetPath)
         {
             if (Validate.SafePath(assetPath, "assetPath") is object pathErr) return pathErr;
@@ -608,7 +611,8 @@ namespace UnitySkills
             Category = SkillCategory.UIToolkit, Operation = SkillOperation.Query,
             Tags = new[] { "list", "ui-document", "scene", "inspect" },
             Outputs = new[] { "count", "documents" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object UitkListDocuments()
         {
             var docs = FindHelper.FindAll<UIDocument>();
@@ -632,7 +636,8 @@ namespace UnitySkills
             Tags = new[] { "inspect", "uxml", "hierarchy", "parse" },
             Outputs = new[] { "path", "hierarchy" },
             RequiresInput = new[] { "filePath" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object UitkInspectUxml(string filePath, int depth = 5)
         {
             if (Validate.SafePath(filePath, "filePath") is object pathErr) return pathErr;
@@ -1484,7 +1489,8 @@ $@"<?xml version=""1.0"" encoding=""utf-8""?>
             Tags = new[] { "uss", "variables", "custom-properties", "css" },
             Outputs = new[] { "path", "definedCount", "variables", "referencedVariables" },
             RequiresInput = new[] { "filePath" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object UitkListUssVariables(string filePath)
         {
             if (Validate.SafePath(filePath, "filePath") is object pathErr) return pathErr;
@@ -1669,7 +1675,8 @@ public class {className} : MonoBehaviour
             Tags = new[] { "inspect", "ui-document", "hierarchy", "visual-element" },
             Outputs = new[] { "gameObject", "instanceId", "hierarchy" },
             RequiresInput = new[] { "gameObject" },
-            ReadOnly = true)]
+            ReadOnly = true,
+            Mode = SkillMode.SemiAuto)]
         public static object UitkInspectDocument(
             string name = null, int instanceId = 0, string path = null,
             int depth = 5)
