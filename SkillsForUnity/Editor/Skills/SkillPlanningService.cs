@@ -19,11 +19,6 @@ namespace UnitySkills
             ApplySemanticPlanner(skill, validation, null);
         }
 
-        public static void EnrichDryRun(SkillRouter.SkillInfo skill, SkillRouter.ParameterValidationResult validation)
-        {
-            ApplySemanticValidation(skill, validation);
-        }
-
         /// <summary>
         /// Returns steps/changes data for inclusion in DryRun responses.
         /// Returns null if no semantic planner exists for this skill.
