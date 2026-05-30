@@ -538,6 +538,26 @@ namespace UnitySkills
                 card.Add(args);
             }
 
+            bool isPanel = req.Channel == "panel";
+
+            // 渠道区分反馈：Panel 渠道走面板 Approve；Dialog 渠道的批准走 AI 对话，面板按钮无效，给出明确指引
+            if (isPanel && req.ApprovedByPanel)
+            {
+                var status = new Label(PermissionUiHelpers.L("perm_approved_waiting",
+                    "Approved · waiting for AI to execute", "已批准 · 等待 AI 执行"));
+                status.AddToClassList("setting-hint");
+                status.style.marginBottom = 2;
+                card.Add(status);
+            }
+            else if (!isPanel)
+            {
+                var chatHint = new Label(PermissionUiHelpers.L("perm_approve_in_chat",
+                    "Dialog channel — approve in the AI chat", "对话渠道 · 请在 AI 对话中批准"));
+                chatHint.AddToClassList("setting-hint");
+                chatHint.style.marginBottom = 2;
+                card.Add(chatHint);
+            }
+
             var actions = new VisualElement { style = { flexDirection = FlexDirection.Row, justifyContent = Justify.FlexEnd, marginTop = 2 } };
             var approveBtn = new Button(() => SkillsModeManager.Approve(req.Token))
             {
@@ -545,6 +565,7 @@ namespace UnitySkills
             };
             approveBtn.AddToClassList("mini-btn");
             approveBtn.style.marginRight = 4;
+            approveBtn.SetEnabled(isPanel && !req.ApprovedByPanel); // 仅 Panel 渠道未批准时可点
             actions.Add(approveBtn);
 
             var denyBtn = new Button(() => SkillsModeManager.Deny(req.Token))
@@ -675,7 +696,7 @@ namespace UnitySkills
             sb.Append(SkillsModeManager.PanelApprovalRequired ? '1' : '0').Append('|');
             sb.Append('p').Append(pending.Count).Append(':');
             for (int i = 0; i < pending.Count; i++)
-                sb.Append(pending[i].Token).Append(',');
+                sb.Append(pending[i].Token).Append(pending[i].ApprovedByPanel ? '+' : '-').Append(',');
             sb.Append('|').Append('a').Append(allowlist.Count).Append(':');
             foreach (var s in allowlist)
                 sb.Append(s).Append(',');
