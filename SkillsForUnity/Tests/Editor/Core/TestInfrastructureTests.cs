@@ -81,11 +81,8 @@ namespace UnitySkills.Tests.Core
         [Test]
         public void TestRun_WhenAnotherRunIsActive_ReturnsErrorInsteadOfStartingConcurrentRunner()
         {
+            const string testFolder = "Assets/CodexTemp/RealValidation";
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            if (!AssetDatabase.IsValidFolder("Assets/CodexTemp"))
-                AssetDatabase.CreateFolder("Assets", "CodexTemp");
-            if (!AssetDatabase.IsValidFolder("Assets/CodexTemp/RealValidation"))
-                AssetDatabase.CreateFolder("Assets/CodexTemp", "RealValidation");
             var cleanScenePath = "Assets/CodexTemp/RealValidation/ActiveJobGuardScene.unity";
             Assert.That(EditorSceneManager.SaveScene(SceneManager.GetActiveScene(), cleanScenePath), Is.True);
 
@@ -103,6 +100,8 @@ namespace UnitySkills.Tests.Core
             finally
             {
                 BatchPersistence.RemoveJob(jobId);
+                if (AssetDatabase.IsValidFolder(testFolder))
+                    AssetDatabase.DeleteAsset(testFolder);
             }
         }
 

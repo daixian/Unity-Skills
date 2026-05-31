@@ -22,11 +22,6 @@ namespace UnitySkills.Tests.Core
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             Selection.objects = new Object[0];
             GameObjectFinder.InvalidateCache();
-
-            if (!AssetDatabase.IsValidFolder("Assets/CodexTemp"))
-                AssetDatabase.CreateFolder("Assets", "CodexTemp");
-            if (!AssetDatabase.IsValidFolder(TempRoot))
-                AssetDatabase.CreateFolder("Assets/CodexTemp", "SelectionDrivenSkillTests");
         }
 
         [TearDown]

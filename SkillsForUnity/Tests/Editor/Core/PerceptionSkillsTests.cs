@@ -244,33 +244,37 @@ namespace UnitySkills.Tests.Core
         [Test]
         public void SceneDiff_SnapshotOnlyIncludesActiveSceneObjects()
         {
-            if (!AssetDatabase.IsValidFolder("Assets/CodexTemp"))
-                AssetDatabase.CreateFolder("Assets", "CodexTemp");
-            if (!AssetDatabase.IsValidFolder("Assets/CodexTemp/RealValidation"))
-                AssetDatabase.CreateFolder("Assets/CodexTemp", "RealValidation");
+            const string testFolder = "Assets/CodexTemp/RealValidation";
+            try
+            {
+                var activeScene = SceneManager.GetActiveScene();
+                var activeObject = new GameObject("ActiveSceneObject");
+                var activeSaveOk = EditorSceneManager.SaveScene(activeScene, "Assets/CodexTemp/RealValidation/SceneDiffActive.unity");
+                Assert.That(activeSaveOk, Is.True);
 
-            var activeScene = SceneManager.GetActiveScene();
-            var activeObject = new GameObject("ActiveSceneObject");
-            var activeSaveOk = EditorSceneManager.SaveScene(activeScene, "Assets/CodexTemp/RealValidation/SceneDiffActive.unity");
-            Assert.That(activeSaveOk, Is.True);
+                var additiveScene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
+                var additiveObject = new GameObject("AdditiveSceneObject");
+                SceneManager.MoveGameObjectToScene(additiveObject, additiveScene);
+                var additiveSaveOk = EditorSceneManager.SaveScene(additiveScene, "Assets/CodexTemp/RealValidation/SceneDiffAdditive.unity");
+                Assert.That(additiveSaveOk, Is.True);
+                var setActiveOk = SceneManager.SetActiveScene(activeScene);
+                Assert.That(setActiveOk, Is.True);
+                Assert.That(SceneManager.GetActiveScene().path, Is.EqualTo(activeScene.path));
+                GameObjectFinder.InvalidateCache();
 
-            var additiveScene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
-            var additiveObject = new GameObject("AdditiveSceneObject");
-            SceneManager.MoveGameObjectToScene(additiveObject, additiveScene);
-            var additiveSaveOk = EditorSceneManager.SaveScene(additiveScene, "Assets/CodexTemp/RealValidation/SceneDiffAdditive.unity");
-            Assert.That(additiveSaveOk, Is.True);
-            var setActiveOk = SceneManager.SetActiveScene(activeScene);
-            Assert.That(setActiveOk, Is.True);
-            Assert.That(SceneManager.GetActiveScene().path, Is.EqualTo(activeScene.path));
-            GameObjectFinder.InvalidateCache();
+                var result = PerceptionSkills.SceneDiff();
+                var json = ToJObject(result);
+                var snapshot = json["snapshot"] as JArray;
 
-            var result = PerceptionSkills.SceneDiff();
-            var json = ToJObject(result);
-            var snapshot = json["snapshot"] as JArray;
-
-            Assert.IsTrue(snapshot?.Any(item => item["name"]?.ToString() == "ActiveSceneObject") ?? false);
-            Assert.IsFalse(snapshot?.Any(item => item["name"]?.ToString() == "AdditiveSceneObject") ?? true);
-            Assert.AreEqual(activeScene.name, json["sceneName"]?.ToString());
+                Assert.IsTrue(snapshot?.Any(item => item["name"]?.ToString() == "ActiveSceneObject") ?? false);
+                Assert.IsFalse(snapshot?.Any(item => item["name"]?.ToString() == "AdditiveSceneObject") ?? true);
+                Assert.AreEqual(activeScene.name, json["sceneName"]?.ToString());
+            }
+            finally
+            {
+                if (AssetDatabase.IsValidFolder(testFolder))
+                    AssetDatabase.DeleteAsset(testFolder);
+            }
         }
     }
 }

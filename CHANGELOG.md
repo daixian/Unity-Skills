@@ -2,6 +2,74 @@
 
 All notable changes to **UnitySkills** will be documented in this file.
 
+## [2.0.0] - 2026-05-31
+
+> **重大更新**：本版本是基于 v1.9.4 全量审计（14-agent workflow）的深度一致性修复与效率优化版本，落地了「Skill 模式一致性 + 调用效率 + 辅助 Mode 修复计划」（`temp/skill-mode-consistency-fix-plan.md`）的全部 5 个工作包（WP-A 至 WP-E）。
+
+### ⚠️ BREAKING CHANGES
+
+- **默认操作模式语义对齐 Auto（WP-A + C.1）** — 澄清并强化 Auto 模式的真实行为：Auto 模式下，除 NeverInSemi（`Delete` / `MayEnterPlayMode` / `MayTriggerReload` / `RiskLevel=high`）外的**所有 skill（包括 FullAuto 写操作）直接执行**，不再被阻止。这是 v1.9.0 起的既定设计（代码 `SkillsModeManager.cs:143` 从未改变），本次修正了测试断言、文档描述和代码注释中的失实内容，使"代码-测试-文档"三方完全对齐。
+  - **测试修正**：`SkillsModeManagerTests.cs` 中 `CurrentMode_FreshInstall_NoKeys_DefaultsToApproval()` 断言从 `Approval` 改为 `Auto`，与代码实现一致（该测试此前与代码冲突，一旦运行必然失败）。
+  - **文档修正**：主 `SKILL.md` 明确"Factory default: fresh install → Auto, upgraded install → Bypass; never Approval"；`agent.md` 修正自相矛盾句"默认 Approval；新装默认 Auto"为"新安装默认 Auto；老安装升级默认 Bypass；从不默认 Approval"。
+  - **注释修正**：`SkillsModeManager.cs` 类头注释从"FullAuto blocked by default"改为"FullAuto write skills executes directly; only NeverInSemi is blocked with MODE_FORBIDDEN"，与 `CheckAccess:453-454` 实际逻辑一致。
+
+### Added
+
+#### WP-E · 辅助 Mode：预置 Allowlist 包
+- **AllowlistPresets 预置包（WP-E.1）** — 新增 `AllowlistPresets.cs` 静态类，提供三组预置 skill 列表：
+  - **组 A · 脚本写**（`ScriptWrite`）：`script_create` / `script_append` / `script_replace` / `script_rename` / `script_move` — 这些 skill 标注了 `MayTriggerReload + RiskLevel="high"`，被 `IsForbiddenInSemi` 判为 NeverInSemi，在 Auto / Approval 下都返回 `MODE_FORBIDDEN`，是唯一"非 Allowlist 不可"的编码刚需。
+  - **组 B · Inspector 赋值**（`InspectorSet`）：`component_add` / `component_set_property` / `component_set_property_batch` / `component_set_enabled` — 这些是 FullAuto（`approvalBehavior=grant`），在 Auto 模式本就直接执行，加入 Allowlist 主要让 Approval 模式免去逐次 grant。
+  - **组 C · 辅助代码编写**（`CodingAssist`）：组 A + 组 B 的合并列表，供 `AllowlistPickerWindow` 的"勾选辅助代码编写包"按钮一键导入。
+  - **收录原则**：只收"加入 Allowlist 才有增量价值"的写操作；纯读 / 查询 skill（SemiAuto，任何模式本就放行）与删除类（forbid，留给用户显式追加）一律不收。
+- **AllowlistPickerWindow 快捷选择器增强（WP-E.2）** — 在现有 Allowlist 多选弹窗顶部新增"勾选辅助代码编写包"快捷按钮，点击后一键导入 `AllowlistPresets.CodingAssist` 列表，复用现有高危合并确认弹窗（`AllowlistPickerWindow.cs:233-251`）。用户可继续用现有 Picker 的搜索/分组/全选功能叠加自己需要的 Unity 操作，预置项与追加项统一落 `UnitySkills_AllowlistSkills`。
+- **安全文案（WP-E.3）** — 在按钮旁明确提示：加入 Allowlist 的高危项默认无二次确认（`RequireConfirmation` 默认 false），即 `script_create` / `script_delete` 会直接落盘/删文件；建议用户"如需安全网，请在 Server > Settings 开启 Require Confirmation"。
+
+#### WP-D · 调用效率优化（行为改动）
+- **/skills/schema 支持 ?category 分批过滤（WP-D.5）** — `SkillRouter.GetFilteredSchema()` 新增，支持 `GET /skills/schema?category=...` 查询参数，按需获取分类 schema，避免拉取完整 ~578KB schema。复用 `GetFilteredManifest` 的过滤逻辑（category / operation / tags / readOnly / q），保持向后兼容（无 query 时仍返回全量）。
+- **Python 客户端 schema/manifest 进程内缓存（WP-D.4）** — `unity_skills.py` 新增带失效策略的进程内缓存，以 `/health` 返回的 `version` / `skillCount` 作为失效信号，消除同会话反复全量拉取 ~750 skill 的开销。
+- **Domain Reload 重试收敛（WP-D.6）** — 修正客户端双层重试叠加问题（`call` 内置 `_retries=3` + `call_skill_with_retry max_retries=3` 乘积放大至 4~16 次 HTTP）。遇 503 `Compiling`（或 ConnectionError）改为"轮询 `/health` 等编译完成后单次重发"，并收敛为单层重试上限，避免撞限流（`SkillsHttpServer.cs:47-49` 100 req/s）形成正反馈。
+- **异步轮询指数退避（WP-D.2）** — `poll_job` 从 0.5s 固定间隔改为指数退避（上限封顶），减少长任务下的大量 poll；统一 `JobWait` 与 `wait_for_job` 的默认超时值（C# 10s / Python 60s → 统一为 30s）。
+
+#### 其他新增
+- **PackageManagerHelper 测试包可见性增强** — 新增 `PackageManagerHelper.cs`，确保测试程序集（`UnitySkills.Tests.Editor`）在 Package Manager 中可见，避免测试失败（`testables` 字段自动注入）。
+- **Approval 双渠道 UI 区分反馈** — `PendingApprovalBannerController` / `SettingsDrawerController` / `TopbarController` 增强，Panel 和 Dialog 两种审批渠道的 UI 区分反馈机制（Panel 渠道下显示待批列表，Dialog 渠道下隐藏）。
+- **GeometryChangedEvent 自愈机制** — 处理 UIToolkit `GeometryChangedEvent` 漏派发问题（Unity 6 ATGTextJobSystem 偶发 bug），避免 UI 控件状态不同步。
+
+### Changed
+
+#### WP-B · 面向用户/AI 文档纠错
+- **删除 SKILL.md 残留兜底名单（WP-B.1）** — 主 `SKILL.md` 删除 `_explicitNeverList` 兜底名单（`scene_clear` / `scene_new` / `batch_apply`）的残留描述（该名单已于 v1.9.2 删除，且这些 skill 在当前 750 skill 中根本不存在）；NeverInSemi 数量从 `~40+` 更新为 `~75-79`，改为纯 4 条元数据判定（`Delete` / `MayEnterPlayMode` / `MayTriggerReload` / `RiskLevel=high`）。
+- **移除"(默认)"Approval 错标（WP-B.2）** — 各模块 SKILL.md（gameobject / scene / editor / component 等）移除错误的"（默认）Approval"标注，改为仅描述行为（"本模块多为 SkillMode.FullAuto，调用需用户 grant"），避免误导 AI 认为 Approval 是出厂默认。
+- **修正 Python 客户端过期 docstring（WP-B.3）** — `unity_skills.py` 中 `approve_permission` / `list_allowlist` 等函数的 docstring 从旧 `GrantedSkills` 语义更新为 Allowlist 语义（"单次有效，不写永久白名单"），与 v1.9.1 起的实际行为一致。
+
+#### WP-D · 调用效率优化（文档改动）
+- **SKILL.md schema-first 增加跳过门槛（WP-D.1）** — 主 `SKILL.md` 的"Canonical Schema First"章节增加判定门槛："**参数已确定的常见只读/简单写调用可直接调用**；仅当 skill 名或签名拿不准时才查 schema"，避免无条件首选导致对简单任务也反复查 schema。同时把 `GET /skills?category=<Category>` 从"Canonical Schema"挪出，单列并标注："`?category` 返回的是 **manifest**（轻量，含 mode/approvalBehavior/parameters），不是 schema；`/skills/schema` 才是 schema（现已支持 `?category` 分批，见 WP-D.5）"。
+- **BATCH-FIRST 强化（WP-D.3）** — 主 `SKILL.md` 与各模块 `SKILL.md` 把"prefer *_batch"提到 Core Rules 更靠前，并加反例提示："逐个调用 = N 次往返（Approval 下 2N）；2+ 对象务必用 *_batch"。
+
+#### WP-C · 代码注释纠正 + 死代码清理
+- **补全 agent.md 架构清单（WP-C.3）** — `agent.md` 架构文件清单补列 `SkillPlanningService.cs`（SkillRouter 内部预演引擎，/plan /dryRun + 参数语义校验，非 skill，无 [UnitySkill]），避免被误认为孤儿死代码。
+
+#### 其他变更
+- **主 SKILL.md 一致性更新** — 效率优化、编码索引更新、参数描述修正、添加精确签名部分（与 `SkillDocumentationConsistencyTests` 参数简化处理逻辑对齐）。
+- **版本号更新** — `SkillsLogger.Version` / `package.json` / Python helper `__version__` / `agent.md` 同步提升到 `2.0.0`。
+
+### Fixed
+
+- **SkillValidationTests 未知参数路径** — 修正测试中未知参数的访问路径（`skill.UnknownParameters` → 正确路径）。
+- **SkillDocumentationConsistencyTests 参数简化** — 添加参数简化处理逻辑，避免文档与代码参数名不一致时误报（如 `timeoutMs` vs `timeout`）。
+- **PerceptionSkillsTests / SelectionDrivenSkillTests 临时文件夹创建** — 优化测试中的临时文件夹创建逻辑，确保测试隔离性。
+
+### Removed
+
+- **删除孤儿方法 SkillPlanningService.EnrichDryRun（WP-C.2）** — 全仓 grep `.EnrichDryRun(` 零调用者，删除该方法级死代码。**注意**：`SkillPlanningService` 整体是活代码（`SkillRouter.cs:657/1188/1532` 调用），仅删除孤儿方法。
+
+### Docs
+
+- **skillcheck 校验逻辑更新** — `.claude/commands/skillcheck.md` 移除 `_explicitNeverList` 校验逻辑，NeverInSemi 统计更新为 75-79（与 WP-B.1 对齐）。
+- **job_wait 超时参数标注（WP-D.2）** — 主 `SKILL.md` 与 `batch/SKILL.md` 交叉标注 `job_wait` 默认 `timeoutMs` 值（C# 10s / Python 60s → 统一为 30s）。
+
+---
+
 ## [1.9.4] - 2026-05-29
 
 ### Added
