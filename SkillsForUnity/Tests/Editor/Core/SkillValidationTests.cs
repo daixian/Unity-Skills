@@ -15,7 +15,7 @@ namespace UnitySkills.Tests.Core
             Assert.That(response["status"]?.ToString(), Is.EqualTo("error"));
             StringAssert.Contains("Unknown parameters", response["error"]?.ToString());
 
-            var unknownParams = (JArray)response["unknownParams"];
+            var unknownParams = (JArray)response["details"]?["unknownParams"];
             Assert.That(unknownParams, Is.Not.Null);
             Assert.That(unknownParams.Count, Is.EqualTo(3));
 
@@ -31,7 +31,7 @@ namespace UnitySkills.Tests.Core
 
             Assert.That(response["status"]?.ToString(), Is.EqualTo("error"));
 
-            var unknownParams = (JArray)response["unknownParams"];
+            var unknownParams = (JArray)response["details"]?["unknownParams"];
             Assert.That(unknownParams, Is.Not.Null);
             Assert.That(unknownParams.Count, Is.EqualTo(1));
             AssertSuggestion(unknownParams, "shaderName", "searchName");

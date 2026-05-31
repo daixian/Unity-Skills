@@ -2,6 +2,7 @@ using System.Linq;
 using NUnit.Framework;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -243,6 +244,11 @@ namespace UnitySkills.Tests.Core
         [Test]
         public void SceneDiff_SnapshotOnlyIncludesActiveSceneObjects()
         {
+            if (!AssetDatabase.IsValidFolder("Assets/CodexTemp"))
+                AssetDatabase.CreateFolder("Assets", "CodexTemp");
+            if (!AssetDatabase.IsValidFolder("Assets/CodexTemp/RealValidation"))
+                AssetDatabase.CreateFolder("Assets/CodexTemp", "RealValidation");
+
             var activeScene = SceneManager.GetActiveScene();
             var activeObject = new GameObject("ActiveSceneObject");
             var activeSaveOk = EditorSceneManager.SaveScene(activeScene, "Assets/CodexTemp/RealValidation/SceneDiffActive.unity");

@@ -4,7 +4,9 @@ using UnityEditor.PackageManager;
 using UnityEditor.PackageManager.Requests;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using Newtonsoft.Json.Linq;
 using PkgInfo = UnityEditor.PackageManager.PackageInfo;
 
 namespace UnitySkills
@@ -260,6 +262,8 @@ namespace UnitySkills
         {
             try
             {
+                EnsureTestable();
+
                 // 延迟执行，等待 Package Manager 完成初始化
                 EditorApplication.delayCall += () =>
                 {
@@ -280,6 +284,37 @@ namespace UnitySkills
             catch (System.Exception ex)
             {
                 UnityEngine.Debug.LogError("[UnitySkills] PackageManagerHelper init failed: " + ex);
+            }
+        }
+
+        private const string PackageName = "com.besty.unity-skills";
+
+        private static void EnsureTestable()
+        {
+            var manifestPath = Path.Combine(Application.dataPath, "..", "Packages", "manifest.json");
+            if (!File.Exists(manifestPath)) return;
+
+            try
+            {
+                var json = JObject.Parse(File.ReadAllText(manifestPath));
+                var testables = json["testables"] as JArray;
+
+                if (testables != null && testables.Any(t => t.Value<string>() == PackageName))
+                    return;
+
+                if (testables == null)
+                {
+                    testables = new JArray();
+                    json["testables"] = testables;
+                }
+
+                testables.Add(PackageName);
+                File.WriteAllText(manifestPath, json.ToString(Newtonsoft.Json.Formatting.Indented));
+                SkillsLogger.Log("Added package to manifest.json testables for Test Runner visibility.");
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning($"[UnitySkills] Failed to update manifest.json testables: {ex.Message}");
             }
         }
 

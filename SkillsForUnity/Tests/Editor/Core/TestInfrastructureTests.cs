@@ -4,6 +4,7 @@ using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
+using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -81,6 +82,10 @@ namespace UnitySkills.Tests.Core
         public void TestRun_WhenAnotherRunIsActive_ReturnsErrorInsteadOfStartingConcurrentRunner()
         {
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            if (!AssetDatabase.IsValidFolder("Assets/CodexTemp"))
+                AssetDatabase.CreateFolder("Assets", "CodexTemp");
+            if (!AssetDatabase.IsValidFolder("Assets/CodexTemp/RealValidation"))
+                AssetDatabase.CreateFolder("Assets/CodexTemp", "RealValidation");
             var cleanScenePath = "Assets/CodexTemp/RealValidation/ActiveJobGuardScene.unity";
             Assert.That(EditorSceneManager.SaveScene(SceneManager.GetActiveScene(), cleanScenePath), Is.True);
 
@@ -236,12 +241,19 @@ namespace UnitySkills.Tests.Core
         [Test]
         public void TestList_WhenNoCachedDiscoveryExists_StartsAsyncDiscovery()
         {
+            var existingDiscoveries = BatchPersistence.ListJobs(200)
+                .Where(j => j != null && string.Equals(j.kind, "test_discovery", System.StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+            foreach (var d in existingDiscoveries)
+                BatchPersistence.RemoveJob(d.jobId);
+
             var json = ToJObject(TestSkills.TestList(limit: 10));
-            Assert.That(json["success"]?.Value<bool>(), Is.False);
+            Assert.That(json["success"]?.Value<bool>(), Is.True);
+            Assert.That(json["pendingDiscovery"]?.Value<bool>(), Is.True);
             var discoveryJobId = json["discoveryJobId"]?.ToString();
             Assert.That(discoveryJobId, Is.Not.Null.And.Not.Empty);
             Assert.That(json["discoveryMode"]?.ToString(), Is.EqualTo("unity_test_runner_async_cache"));
-            StringAssert.Contains("No cached Unity Test Runner discovery result", json["error"]?.ToString());
+            StringAssert.Contains("No cached Unity Test Runner discovery result", json["message"]?.ToString());
             BatchPersistence.RemoveJob(discoveryJobId);
         }
 

@@ -11,10 +11,14 @@ namespace UnitySkills.Tests.Core
     public class SelectionDrivenSkillTests
     {
         private const string TempRoot = "Assets/CodexTemp/SelectionDrivenSkillTests";
+        private SkillsOperatingMode _savedMode;
 
         [SetUp]
         public void SetUp()
         {
+            _savedMode = SkillsModeManager.CurrentMode;
+            SkillsModeManager.CurrentMode = SkillsOperatingMode.Bypass;
+
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             Selection.objects = new Object[0];
             GameObjectFinder.InvalidateCache();
@@ -32,6 +36,7 @@ namespace UnitySkills.Tests.Core
             GameObjectFinder.InvalidateCache();
             AssetDatabase.DeleteAsset(TempRoot);
             AssetDatabase.Refresh();
+            SkillsModeManager.CurrentMode = _savedMode;
         }
 
         [Test]

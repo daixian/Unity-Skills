@@ -7,7 +7,7 @@
 检测以下问题（这些是 v1.6.8 修复的那类 bug 的根源——文档声称支持的参数在代码中不存在）：
 
 1. **幽灵 Skill**：SKILL.md 中记录了但 C# 代码中不存在的 Skill
-2. **未文档化 Skill**：C# 中存在 `[UnitySkill]` 但 SKILL.md 中未记录的 Skill
+2. **完全无文档的 Skill**：C# 中存在 `[UnitySkill]` 但在整个 `skills/` 文档树中**完全无提及**的 Skill（注意：本项目为 schema-first 设计——skill 无需逐个写 `### skill_name` 定义，故"无 `###` 定义"本身**不算缺陷**，详见步骤 3a）
 3. **参数不一致**：SKILL.md 文档的参数表与 C# 方法签名不匹配（多余参数、缺失参数、类型不匹配）
 4. **元数据缺失**：`[UnitySkill]` 特性中缺少 `Category`、`Operation`、`Tags`、`Outputs` 等关键元数据
 
@@ -40,7 +40,7 @@
    - **所属模块**（目录名）
 
 2. **额外提取**（按模块级别）：
-   - **DO NOT 列表**：从 `## Guardrails` → `**DO NOT**` 区块中提取所有被声称"不存在"的 skill 名（如 `gameobject_move` / `gameobject_rotate` do not exist）
+   - **DO NOT 列表**：从 `## Guardrails` → `**DO NOT**` 区块提取被声称"不存在"的 skill 名。⚠️ 条目格式恒为 `` `幻觉名` does not exist → use `真实名` ``：**只提取箭头 `→`（或 `->`）左侧、紧邻 "does not exist"/"do not exist" 的 skill 名**；箭头右侧 "use `xxx`" 是推荐替代的**真实** skill，**必须排除**，绝不能当作"被声称不存在"。例如 `` `gameobject_move` / `gameobject_rotate` do not exist → use `gameobject_set_transform` ``：只取 `gameobject_move`、`gameobject_rotate`，排除右侧的 `gameobject_set_transform`。
    - **Skills Overview 表格**：从 `## Skills Overview` 表格中提取所有列出的 skill 名
 
 3. 汇总为文档 Skill 清单
@@ -51,9 +51,11 @@
 
 ### 3a. Skill 名称比对
 
+> **Schema-first 前提**：本项目文档采用 schema-first——精确的 skill 名/参数/返回由 `GET /skills/schema`（见各 SKILL.md 末尾 `## Exact Signatures` 节）提供，**模块 SKILL.md 无需为每个 skill 写 `### skill_name` 定义**。因此"C# 有但文档无 `###` 定义"是**预期正常态，不是缺陷**。这与项目自带测试 `SkillDocumentationConsistencyTests` 一致——它只校验幽灵 skill，从不校验"未文档化"。
+
 - 取 C# 清单和文档清单的差集：
-  - `C# 有 ∩ 文档无` → **未文档化 Skill**
-  - `文档有 ∩ C# 无` → **幽灵 Skill**（高风险：AI 会尝试调用这些不存在的 Skill）
+  - `文档有 ∩ C# 无` → **幽灵 Skill** 🔴（唯一硬错误：AI 会尝试调用不存在的 Skill）
+  - `C# 有 ∩ 文档无 ###` → 仅作 🟢 **信息统计**（schema-first 下非问题），**不报 🟡 中等**。仅当某 skill 在整个 `skills/` 树中**完全无任何提及**（连 Route/Overview/参考文档都没有）时，才作为 🟢 建议提示补文档。
 
 ### 3b. 参数签名比对
 
@@ -92,10 +94,12 @@
 
 ### 3f. DO NOT 列表验证（反向幽灵检查）
 
-扫描每个 SKILL.md 的 `## Guardrails` → `**DO NOT**` 区块中声称"不存在"的 skill 名（如 `gameobject_move` do not exist），与 C# 实际 skill 名清单交叉验证：
+扫描每个 SKILL.md 的 `## Guardrails` → `**DO NOT**` 区块，**只取箭头左侧声称"不存在"的 skill 名**（箭头方向规则见步骤 2.2），与 C# 实际 skill 名清单交叉验证：
 
-- 如果 DO NOT 声称"不存在"的 skill **实际已存在于 C# 中** → 🔴 严重（AI 会被阻止调用一个真实存在的 Skill）
-- 如果 DO NOT 声称"不存在"的 skill 确实不存在 → 正常，无问题
+- 如果某个**箭头左侧**声称"不存在"的 skill **实际已存在于 C# 中** → 🔴 严重（文档错误地否认了真实 skill）
+- 否则正常，无问题
+
+⚠️ **此处最易误判**：切勿把箭头右侧 "use `xxx`" 的推荐 skill 纳入校验——它们本就是真实存在的替代项。把右侧 skill 当成"被声称不存在但实际存在"会批量产出假阳性。正确预期：DO NOT 区块右侧推荐 skill 应 100% 真实存在、左侧幻觉 API 应 100% 不存在，故本项**正常结果为 0 误报**。
 
 ### 3g. Skills Overview 表格完整性
 
@@ -133,6 +137,8 @@
 1. **覆盖统计**：自动判定为 NeverInSemi 的 skill 总数（当前约 75-79），按模块分组列出
 2. **语义矛盾检测**：若某 skill 同时被 `Mode = SkillMode.SemiAuto` 手标 + 满足自动 NeverInSemi 判定 → 🔴 严重（必须移除其 SA 标注，或调整元数据让其不再满足 NeverInSemi 规则）
 
+   ⚠️ **判定必须逐 `[UnitySkill(...)]` attribute 块进行**：一个 skill 的 `Mode`/`Operation`/`RiskLevel`/`MayEnterPlayMode`/`MayTriggerReload` 只能取**它自己 attribute 块内**的标注。严禁把同一 `*.cs` 文件中**其他** skill（尤其相邻块）的 `Operation=Delete` 等元数据"按文件"或"按相邻"算到本 skill 头上。典型误判：查询类 `xxx_find`/`xxx_list`/`xxx_get`（实为 `Operation=Analyze/Query` 且标了 `SemiAuto`）被同文件的 `xxx_delete` 污染成"含 Delete"。建议用括号配平精确切分每个 attribute 块。正确预期：真实矛盾通常为 0。
+
 ### 3j. /permission/* 端点存活校验（可选 — 需服务运行）
 
 如果当前 Unity Editor + UnitySkills server 正在运行，发起以下 HTTP 检查（推荐用 `unity_skills.py` 客户端函数）：
@@ -159,7 +165,7 @@
 - 匹配：{X}
 - Advisory 模块（自动跳过）：{列出跳过的模块名}
 - Mode = SemiAuto 标注：{N}（C# 显式手标）
-- NeverInSemi 自动判定：{N}（含兜底名单 {K} 个）
+- NeverInSemi 自动判定：{N}（纯元数据规则，无兜底名单）
 - /permission API 校验：{已通过 / 已跳过：服务离线 / N 项失败}
 
 🔴 严重问题（AI 会被误导）
@@ -189,8 +195,8 @@
 
 🟡 中等问题（功能可用但文档不完整）
 
-  未文档化 Skill（代码有，文档无）：
-  - {file}:{line}: `{skill_name}` — C# 中存在但 SKILL.md 未记录
+  完全无文档的 Skill（代码有，整个 skills/ 树无任何提及）：
+  - {file}:{line}: `{skill_name}` — C# 存在但文档树完全未提及（schema-first 下仅此种才报；"无 ### 定义"不报）
 
   未文档化参数（代码有，文档无）：
   - `{skill_name}`: 参数 `{param}` (C# 类型: {type}) 未在文档中记录
@@ -211,9 +217,6 @@
 
   Mode 文档遗漏（代码标 SA, 文档未标）：
   - {module}/SKILL.md: `{skill_name}` C# 中标了 Mode=SemiAuto 但文档 Guardrails 中未注明
-
-  _explicitNeverList 兜底名单失效：
-  - `{skill_name}` 在 _explicitNeverList 中但 C# 中已移除/重命名
 
 🟢 建议（可改进项）
 
