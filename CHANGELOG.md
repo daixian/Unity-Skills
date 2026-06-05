@@ -2,6 +2,18 @@
 
 All notable changes to **UnitySkills** will be documented in this file.
 
+## [2.0.2] - 2026-06-05
+
+### Added
+
+- **YAML 直编指导 Advisory Skill** — 新增 `yaml-editing` advisory 模块，覆盖 REST Skills 无法触达的 4 个场景：序列化引用/fileID 修复、`.meta`/GUID 安全操作、ProjectSettings 隐藏字段补丁、`.unity`/`.prefab` 合并冲突辅助；包含 Core Concepts（YAML 锚点、GUID vs fileID、序列化引用格式）与 Hard Rules（改前 git 备份、uuid4 GUID、改后 Unity 重导入校验等），路由至 `/metacheck` 和 `/skillcheck`。
+
+### Changed
+
+- **SKILL.md description 合规治理** — 精简 49 个 REST 模块的 frontmatter description，统一格式为"功能简述 — 操作动词列表。Exact signatures via GET /skills/schema."，最长 264 字符；修复 perception / shadergraph-design / test / validation 四个模块超 1024 字符被 Codex/Claude 拒载的问题，全量 description 总量从 ~41k 降至 ~20k 字符，消除 ~8000 字符软预算压力。
+- **`/skillcheck` 新增 Frontmatter 合规子检查（3k）** — 校验所有 SKILL.md 的 `description` ≤1024、`name` ≤64、YAML 闭合、无 UTF-8 BOM，并统计 discovery 总量与 ~8000 软预算比较，作为防止超限拒载的防回归闸门。
+- **版本号更新** — `SkillsLogger.Version` / `package.json` / Python helper `__version__` / `agent.md` 同步提升到 `2.0.2`。
+
 ## [2.0.1] - 2026-06-02
 
 ### Added
