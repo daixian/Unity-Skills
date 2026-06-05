@@ -151,6 +151,20 @@
 
 > 服务未运行时跳过本子步骤，在报告统计中标注「已跳过：服务离线」。
 
+### 3k. SKILL.md Frontmatter 合规校验（Agent Skills 标准 + Codex/Claude 硬限）
+
+> **背景**：Codex / Claude 等原生 skill 发现器把**每个含 `SKILL.md` 的子目录当成一个独立 skill** 注册，并在 discovery 阶段读取其 frontmatter `description` 做触发匹配。`description` 超过 **1024 字符**会被直接**拒绝加载**该 skill（典型报错 `Skipped loading N skill(s) due to invalid SKILL.md files`）。本项目真实调用走顶层入口 + `GET /skills/schema`，子 description 应保持精简，避免触发该硬限。
+
+扫描 `unity-skills~/SKILL.md` 及所有 `unity-skills~/skills/**/SKILL.md`（含 REST 与 advisory 模块），逐文件校验 frontmatter：
+
+1. **`description` 长度 ≤ 1024 字符** → 超限 🔴 严重（该 skill 被发现器拒载，AI 完全看不到它）。注意按**字符数**（含中文）统计，非字节数。
+2. **`name` 长度 ≤ 64 字符** → 超限 🔴 严重。
+3. **YAML frontmatter 结构合法**：文件以 `---` 开头并正确闭合；`name` 与 `description` 两个必填键存在且非空 → 缺失 / 不闭合 → 🔴 严重。
+4. **无 UTF-8 BOM**：文件开头不得有 `EF BB BF` 字节（`SkillInstaller.cs` 明确：BOM 会让部分 agent 拒析 frontmatter）→ 有 BOM → 🟡 中等。
+5. **（信息项 🟢）discovery 总量**：累加所有 `SKILL.md` 的 `description` 字符数，提示总和是否逼近发现器 ~8000 字符软预算（超出时发现器可能截断或省略部分 skill）。
+
+> 正常预期：0 项超限、0 BOM。本项是防止"超 1024 拒载" bug 复发的核心闸门。
+
 ## 步骤 4：输出审计报告
 
 按严重程度分级输出：
@@ -167,6 +181,7 @@
 - Mode = SemiAuto 标注：{N}（C# 显式手标）
 - NeverInSemi 自动判定：{N}（纯元数据规则，无兜底名单）
 - /permission API 校验：{已通过 / 已跳过：服务离线 / N 项失败}
+- Frontmatter 合规：{通过（0 超限）/ N 项超限}（最长 description：{module} {len} 字符；discovery 总量：{sum} / ~8000 软预算）
 
 🔴 严重问题（AI 会被误导）
 
@@ -193,6 +208,11 @@
   - `GET /health` 响应缺少字段 `{currentMode/panelApprovalRequired/...}`
   - `GET /skills` 部分 entry 缺少字段 `mode`
 
+  Frontmatter 超限（发现器会拒载该 skill）：
+  - {module}/SKILL.md: `description` 长度 {len} 字符 > 1024 — Codex/Claude 跳过加载，AI 看不到此 skill
+  - {module}/SKILL.md: `name` 长度 {len} 字符 > 64
+  - {module}/SKILL.md: frontmatter 缺少必填键 `{name/description}` 或 `---` 未闭合
+
 🟡 中等问题（功能可用但文档不完整）
 
   完全无文档的 Skill（代码有，整个 skills/ 树无任何提及）：
@@ -217,6 +237,9 @@
 
   Mode 文档遗漏（代码标 SA, 文档未标）：
   - {module}/SKILL.md: `{skill_name}` C# 中标了 Mode=SemiAuto 但文档 Guardrails 中未注明
+
+  Frontmatter 编码问题：
+  - {module}/SKILL.md: 文件含 UTF-8 BOM（EF BB BF）— 部分 agent 会拒析 frontmatter，应存为 UTF-8 无 BOM
 
 🟢 建议（可改进项）
 
