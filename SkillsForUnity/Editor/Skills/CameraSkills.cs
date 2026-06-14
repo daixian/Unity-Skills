@@ -218,6 +218,138 @@ namespace UnitySkills
             return new { success = true, path = savePath, width, height };
         }
 
+        [UnitySkill("camera_sceneview_screenshot", "Capture the editor SCENE VIEW (the developer's editing viewport — can overlook the whole scene incl. off-camera objects; distinct from scene_screenshot which is the Game View/player camera, and camera_screenshot which is one Game Camera). By default captures the full Scene View incl. grid/gizmos/selection (on-screen read); auto-falls back to a clean offscreen render if the editor build doesn't support it. filename is a bare filename only (no path separators); saved under Assets/Screenshots/.",
+            Category = SkillCategory.Camera, Operation = SkillOperation.Execute,
+            Tags = new[] { "screenshot", "capture", "scene-view", "editor", "gizmo" },
+            Outputs = new[] { "path", "width", "height", "mode", "note" })]
+        public static object CameraSceneViewScreenshot(string filename = "sceneview.png", bool includeOverlays = true)
+        {
+            var sv = SceneView.lastActiveSceneView;
+            if (sv == null)
+                return new { error = "No active Scene View found. Open a Scene View window (Window > General > Scene)." };
+
+            // Resolve path the same safe way as scene_screenshot: strip any path components,
+            // force .png, save under Assets/Screenshots/.
+            filename = System.IO.Path.GetFileName(filename);
+            if (string.IsNullOrEmpty(filename)) filename = "sceneview";
+            if (!System.IO.Path.HasExtension(filename)) filename += ".png";
+            var path = System.IO.Path.Combine(Application.dataPath, "Screenshots", filename);
+            var dir = System.IO.Path.GetDirectoryName(path);
+            if (!System.IO.Directory.Exists(dir)) System.IO.Directory.CreateDirectory(dir);
+
+            string mode = null;
+            string note = null;
+            int outW = 0, outH = 0;
+
+            // Method 2 (default): full Scene View incl. grid/gizmos via internal ReadScreenPixel (reflection).
+            if (includeOverlays)
+            {
+                var (ok, w, h, err) = TryCaptureSceneViewScreen(sv, path);
+                if (ok)
+                {
+                    mode = "screen_with_overlays";
+                    outW = w; outH = h;
+                    note = "Full editor Scene View (grid, gizmos, selection highlight). Reads the on-screen window, so the Scene View must be visible and unobscured.";
+                }
+                else
+                {
+                    note = $"Overlay capture unavailable ({err}); fell back to a clean offscreen render.";
+                }
+            }
+
+            // Method 1 (fallback / includeOverlays=false): clean offscreen render from the Scene View camera.
+            if (mode == null)
+            {
+                var (w, h) = CaptureSceneViewCameraOffscreen(sv, path);
+                mode = "offscreen_clean";
+                outW = w; outH = h;
+                if (note == null)
+                    note = "Clean scene render from the Scene View camera angle (no grid/gizmos).";
+            }
+
+            // The PNG is written synchronously above; refresh the AssetDatabase next tick so it shows in the Project window.
+            EditorApplication.delayCall += () => AssetDatabase.Refresh();
+
+            return new { success = true, path, width = outW, height = outH, mode, note };
+        }
+
+        // Method 2: read the actual on-screen pixels of the Scene View window (incl. grid/gizmos/selection).
+        // Uses internal UnityEditorInternal.InternalEditorUtility.ReadScreenPixel via reflection so the assembly
+        // still compiles on Unity versions where the internal API is absent (graceful runtime fallback).
+        private static (bool ok, int width, int height, string error) TryCaptureSceneViewScreen(SceneView sv, string path)
+        {
+            Texture2D tex = null;
+            try
+            {
+                var ieuType = System.Type.GetType("UnityEditorInternal.InternalEditorUtility, UnityEditor");
+                var method = ieuType?.GetMethod("ReadScreenPixel",
+                    new[] { typeof(Vector2), typeof(int), typeof(int) });
+                if (method == null)
+                    return (false, 0, 0, "ReadScreenPixel not available in this Unity version");
+
+                // ReadScreenPixel expects logical (point) coordinates, not physical pixels —
+                // do NOT scale the window rect by EditorGUIUtility.pixelsPerPoint.
+                var ew = (EditorWindow)sv;
+                var pos = ew.position;
+                int w = (int)pos.width;
+                int h = (int)pos.height;
+                if (w <= 0 || h <= 0)
+                    return (false, 0, 0, "invalid window size");
+
+                var pixels = method.Invoke(null, new object[] { new Vector2(pos.x, pos.y), w, h }) as Color[];
+                if (pixels == null || pixels.Length < w * h)
+                    return (false, 0, 0, "empty or short pixel buffer (window may be hidden)");
+
+                tex = new Texture2D(w, h, TextureFormat.RGB24, false);
+                tex.SetPixels(pixels);
+                tex.Apply();
+                System.IO.File.WriteAllBytes(path, tex.EncodeToPNG());
+                return (true, w, h, null);
+            }
+            catch (System.Exception e)
+            {
+                return (false, 0, 0, e.GetType().Name + ": " + e.Message);
+            }
+            finally
+            {
+                if (tex != null) Object.DestroyImmediate(tex);
+            }
+        }
+
+        // Method 1: render the Scene View camera into an offscreen RenderTexture (clean, no editor overlays).
+        // Mirrors the camera_screenshot offscreen pattern.
+        private static (int width, int height) CaptureSceneViewCameraOffscreen(SceneView sv, string path)
+        {
+            var cam = sv.camera;
+            // The camera's pixel dimensions are the true viewport size (excludes the toolbar),
+            // so the offscreen render keeps the correct aspect ratio.
+            int w = Mathf.Max(1, cam.pixelWidth);
+            int h = Mathf.Max(1, cam.pixelHeight);
+
+            var rt = new RenderTexture(w, h, 24);
+            Texture2D tex = null;
+            RenderTexture oldTarget = cam.targetTexture;
+            RenderTexture oldActive = RenderTexture.active;
+            try
+            {
+                cam.targetTexture = rt;
+                cam.Render();
+                RenderTexture.active = rt;
+                tex = new Texture2D(w, h, TextureFormat.RGB24, false);
+                tex.ReadPixels(new Rect(0, 0, w, h), 0, 0);
+                tex.Apply();
+                System.IO.File.WriteAllBytes(path, tex.EncodeToPNG());
+            }
+            finally
+            {
+                cam.targetTexture = oldTarget;
+                RenderTexture.active = oldActive;
+                if (rt != null) Object.DestroyImmediate(rt);
+                if (tex != null) Object.DestroyImmediate(tex);
+            }
+            return (w, h);
+        }
+
         [UnitySkill("camera_set_orthographic", "Switch Game Camera between orthographic and perspective mode",
             Category = SkillCategory.Camera, Operation = SkillOperation.Modify,
             Tags = new[] { "camera", "orthographic", "perspective", "projection" },

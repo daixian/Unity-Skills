@@ -164,7 +164,7 @@ namespace UnitySkills
             {"scene_save", "Save the current scene"},
             {"scene_get_info", "Get current scene information"},
             {"scene_get_hierarchy", "Get scene hierarchy tree"},
-            {"scene_screenshot", "Capture a screenshot of the scene view"},
+            {"scene_screenshot", "Capture a screenshot of the game view"},
             {"gameobject_create", "Create a new GameObject"},
             {"gameobject_delete", "Delete a GameObject by name or instance ID"},
             {"gameobject_find", "Find GameObjects by name, tag, or component"},
@@ -753,6 +753,7 @@ namespace UnitySkills
             {"camera_get_properties", "Get camera properties"},
             {"camera_list", "List all cameras in the scene"},
             {"camera_screenshot", "Capture a screenshot from a camera"},
+            {"camera_sceneview_screenshot", "Capture the editor Scene View (with grid/gizmos)"},
             {"camera_set_culling_mask", "Set camera culling mask"},
             {"camera_set_orthographic", "Set camera orthographic mode"},
 
@@ -1089,7 +1090,7 @@ namespace UnitySkills
             {"scene_save", "保存当前场景"},
             {"scene_get_info", "获取当前场景信息"},
             {"scene_get_hierarchy", "获取场景层级树"},
-            {"scene_screenshot", "截取场景视图截图"},
+            {"scene_screenshot", "截取游戏视图截图"},
             {"gameobject_create", "创建新的游戏对象"},
             {"gameobject_delete", "按名称或实例ID删除游戏对象"},
             {"gameobject_find", "按名称、标签或组件查找游戏对象"},
@@ -1578,6 +1579,7 @@ namespace UnitySkills
             {"camera_get_properties", "获取相机属性"},
             {"camera_list", "列出场景中所有相机"},
             {"camera_screenshot", "从相机截图"},
+            {"camera_sceneview_screenshot", "截取编辑器 Scene 视图（含网格/Gizmo）"},
             {"camera_set_culling_mask", "设置相机剔除遮罩"},
             {"camera_set_orthographic", "设置相机正交模式"},
 

@@ -157,10 +157,10 @@ namespace UnitySkills
             return names.ToArray();
         }
 
-        [UnitySkill("scene_screenshot", "Capture a screenshot of the game view. filename is a bare filename only (no path separators); saved under Assets/Screenshots/.",
+        [UnitySkill("scene_screenshot", "Capture a screenshot of the GAME VIEW (the final composited frame of all cameras + UI; in Play mode this is the live runtime image, NOT the Scene/editor view). filename is a bare filename only (no path separators); saved under Assets/Screenshots/. Async: the PNG is written ~1 frame later, so if an immediate read fails, wait ~200ms and retry.",
             Category = SkillCategory.Scene, Operation = SkillOperation.Execute,
-            Tags = new[] { "screenshot", "capture", "image" },
-            Outputs = new[] { "path", "width", "height" })]
+            Tags = new[] { "screenshot", "capture", "image", "gameview", "playmode" },
+            Outputs = new[] { "path", "width", "height", "isPlaying", "note" })]
         public static object SceneScreenshot(string filename = "screenshot.png", int width = 1920, int height = 1080)
         {
             // Strip any path components to prevent writing outside Screenshots/
@@ -172,10 +172,18 @@ namespace UnitySkills
             if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
 
             int superSize = Mathf.Max(1, width / Screen.width);
+            // ScreenCapture.CaptureScreenshot captures the Game View's final composited frame and
+            // writes the PNG on the NEXT frame (not synchronously). Refreshing right now is a no-op
+            // because the file is not on disk yet, so defer the asset import to the next editor tick.
             ScreenCapture.CaptureScreenshot(path, superSize);
-            AssetDatabase.Refresh();
+            EditorApplication.delayCall += () => AssetDatabase.Refresh();
 
-            return new { success = true, path, width, height };
+            bool isPlaying = EditorApplication.isPlaying;
+            string note = isPlaying
+                ? "Game View captured (live runtime frame). The PNG is written ~1 frame later; if your immediate read fails, wait ~200ms and retry."
+                : "Game View captured in Edit mode — this is the last rendered Game View frame and may be static or blank. Enter Play mode (editor_play) for a live runtime frame. The PNG is written ~1 frame later; if your immediate read fails, wait ~200ms and retry.";
+
+            return new { success = true, path, width, height, isPlaying, note };
         }
 
         [UnitySkill("scene_get_loaded", "Get list of all currently loaded scenes",
