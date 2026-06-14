@@ -2,6 +2,22 @@
 
 All notable changes to **UnitySkills** will be documented in this file.
 
+## [2.0.3] - 2026-06-14
+
+### Added
+
+- **`camera_sceneview_screenshot` 编辑器 Scene View 截图 Skill** — 新增截取**编辑器 Scene View**（开发者编辑视角，可俯瞰含镜头外物体的整个场景，区别于 Game View 的玩家视野）的能力，补齐项目此前仅能截 Game View（`scene_screenshot`）与单个 Game Camera（`camera_screenshot`）、无法截编辑器 Scene View 的缺口。默认走内部反射 API（`UnityEditorInternal.InternalEditorUtility.ReadScreenPixel`）截取含网格 / Gizmo / 选中高亮的完整 Scene View；若编辑器构建不支持该内部 API 则自动回退到 Scene View 相机的离屏纯净渲染，`includeOverlays=false` 亦可强制纯净渲染。反射调用保证零编译风险（跨 Unity 2022.3 / 2023.x / 6000.x 签名稳定），返回 `mode`（`screen_with_overlays` / `offscreen_clean`）与 `note` 字段，让 AI 明确拿到的是哪种截图。
+
+### Changed
+
+- **三种截图 Skill 路由澄清** — `camera/SKILL.md` 与 `scene/SKILL.md` 明确区分三者职责，避免 AI 在等价 skill 间混淆：`scene_screenshot`（Game View 最终合成画面）/ `camera_screenshot`（单个 Game Camera 离屏渲染）/ `camera_sceneview_screenshot`（编辑器 Scene View）。
+- **`scene_screenshot` 描述对齐 Game View** — 修正项目自身文档长期将其误标为"Scene View"的矛盾：`Localization.cs`（中英 UI 显示）、`scene/SKILL.md`、`camera/SKILL.md` 全部对齐为 "Game View"。该 skill 实际调用 `ScreenCapture.CaptureScreenshot`，截取的是 Game View 最终合成画面（Play 模式即运行时实时帧），与代码属性原本的描述一致；新增 `gameview` / `playmode` 标签与 `isPlaying` / `note` 返回字段，显式标明"截的是 Play 模式实时帧还是 Edit 模式静态帧"及异步契约。
+- **版本号更新** — `SkillsLogger.Version` / `package.json` / Python helper `__version__` / `agent.md` 同步提升到 `2.0.3`。
+
+### Fixed
+
+- **`scene_screenshot` 异步写入缺陷** — 原实现调用 `ScreenCapture.CaptureScreenshot` 后立即 `AssetDatabase.Refresh()` 并返回 `success=true`，但该 API 在**下一帧**才把 PNG 落盘，此时刷新是空操作、调用方立即读取会失败（由 issue #38 提出者正确指出）。改用 `EditorApplication.delayCall` 延迟到文件落盘后的下一帧再 `AssetDatabase.Refresh()`，并在返回的 `note` 中提示"立即读取失败请等 ~200ms 重试"。
+
 ## [2.0.2] - 2026-06-05
 
 ### Added
