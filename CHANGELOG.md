@@ -8,6 +8,8 @@ All notable changes to **UnitySkills** will be documented in this file.
 
 - **Unity 对象 ID 兼容层** — 新增 `UnityObjectIdUtility`，统一封装 `EntityId`、legacy `InstanceID`、对象查找、缺失引用检测与 Selection 读写逻辑；Unity 6000.5 走 EntityId 路径，旧版本保留 InstanceID fallback。
 - **Unity 6000.x API 对齐** — 更新 PlayerSettings、Shader、FindObjectsByType、UI Toolkit 背景样式等 API 用法，减少 Unity 6000.5 obsolete warning。
+- **SKILL.md description 精简** — 裁剪全部 70 个 `SKILL.md` 的 frontmatter `description`，总字符数从 ~21,059 降至 6,138（77% of 8k 软预算），所有文件均低于 1024 字符硬限制，消除 Codex/Claude 发现器因超限拒载的风险。
+- **技能数量修正** — README / README_CN 中技能总数从错误的 750 修正为实际的 726，并对齐 UI / PostProcess / Volume / URP / Decal / Camera / Component 等模块计数。
 - **版本号更新** — `SkillsLogger.Version` / `package.json` / Python helper `__version__` / `agent.md` / README 当前版本标记同步提升到 `2.0.4`。
 
 ### Fixed

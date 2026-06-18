@@ -1,6 +1,6 @@
 ---
 name: unity-prefab
-description: "Prefab management — create, instantiate, apply, unpack, find instances, edit prefab assets, create variants. Exact signatures via GET /skills/schema."
+description: Prefab management — create, instantiate, apply, unpack, find instances, edit prefab assets, create
 ---
 
 # Unity Prefab Skills

@@ -1,6 +1,6 @@
 ---
 name: unity-gameobject
-description: "GameObject creation and manipulation — create, delete, move, rotate, scale, parent, find, rename GameObjects. Exact signatures via GET /skills/schema."
+description: GameObject creation and manipulation — create, delete, move, rotate, scale, parent, find, rename
 ---
 
 # Unity GameObject Skills

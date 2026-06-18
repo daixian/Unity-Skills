@@ -1,6 +1,6 @@
 ---
 name: unity-cinemachine
-description: "Cinemachine Virtual Camera setup — VCam/FreeLook/ClearShot/StateDriven, Body/Aim/Noise pipeline, Impulse, target groups, splines, blends, CinemachineBrain. Exact signatures via GET /skills/schema."
+description: Cinemachine Virtual Camera setup — VCam/FreeLook/ClearShot/StateDriven, Body/Aim/Noise pipeline
 ---
 
 # Cinemachine Skills

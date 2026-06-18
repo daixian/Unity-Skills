@@ -3,7 +3,7 @@
 > **本文件面向"开发这个项目的 AI"**，非"调用该项目 REST API 的 AI"。
 > 后者请读 `SkillsForUnity/unity-skills~/SKILL.md`。
 
-通过 REST API 让 AI 直接控制 Unity 编辑器。750 个 REST Skills + 20 个 Advisory 模块。
+通过 REST API 让 AI 直接控制 Unity 编辑器。726 个 REST Skills + 20 个 Advisory 模块。
 
 | 项目 | 值 |
 |------|----|
@@ -24,7 +24,7 @@ AI Agent ──HTTP──▶ unity_skills.py ──POST localhost:8090-8100─�
                                                         │
                                               SkillRouter (反射发现 [UnitySkill])
                                                         │
-                                              51 个 *Skills.cs (750 Skills)
+                                              51 个 *Skills.cs (726 Skills)
                                                         │
                                          WorkflowManager (持久化撤销/回滚)
                                          RegistryService (多实例发现)
@@ -57,7 +57,7 @@ Unity-Skills/
 │   │   │   ├── GameObjectFinder.cs       # 统一查找器 (name/instanceId/path)
 │   │   │   ├── BatchExecutor.cs          # 批量操作框架
 │   │   │   ├── SkillInstaller.cs         # AI 工具一键安装
-│   │   │   └── *Skills.cs × 51           # 功能模块 (共 750 Skills)
+│   │   │   └── *Skills.cs × 51           # 功能模块 (共 726 Skills)
 │   │   └── UI/                           # Editor UI (USS + UXML + EditorWindow)
 │   │       ├── UnitySkillsWindow.{cs,uxml,uss}    # 主窗口
 │   │       ├── AuditLogWindow.{uxml,uss}          # 审计窗口
@@ -166,23 +166,23 @@ public static object SkillName(string name, float x = 0f) { ... }
 
 ---
 
-## Skills 模块 (51 个功能模块, 750 Skills)
+## Skills 模块 (51 个功能模块, 726 Skills)
 
 | 模块 | 数量 | 模块 | 数量 | 模块 | 数量 |
 |------|:----:|------|:----:|------|:----:|
 | YooAsset* | 40 | Cinemachine | 34 | Netcode* | 33 |
-| UI | 26 | UIToolkit | 25 | ShaderGraph | 23 |
+| UI | 29 | UIToolkit | 25 | ShaderGraph | 23 |
 | Workflow | 23 | ProBuilder* | 22 | XR* | 22 |
 | Batch | 22 | DOTween* | 21 | Material | 21 |
-| PostProcess† | 20 | GameObject | 18 | Perception | 18 |
-| Volume† | 18 | URP† | 14 | Decal† | 14 |
+| PostProcess† | 10 | GameObject | 18 | Perception | 18 |
+| Volume† | 9 | URP† | 7 | Decal† | 7 |
 | Test | 13 | Editor | 12 | Script | 12 |
 | Timeline | 12 | Physics | 12 | Asset | 11 |
-| AssetImport | 11 | Camera | 11 | Package | 11 |
+| AssetImport | 11 | Camera | 12 | Package | 11 |
 | Prefab | 11 | Shader | 11 | Graphics | 11 |
 | Animator | 10 | Audio | 10 | Cleaner | 10 |
-| Component | 10 | Console | 10 | Debug | 10 |
-| Event | 10 | Light | 10 | Model | 10 |
+| Component | 14 | Console | 10 | Debug | 10 |
+| Event | 11 | Light | 10 | Model | 10 |
 | NavMesh | 10 | Optimization | 10 | Profiler | 10 |
 | Scene | 10 | ScriptableObject | 10 | Smart | 10 |
 | Terrain | 10 | Texture | 10 | Validation | 10 |
