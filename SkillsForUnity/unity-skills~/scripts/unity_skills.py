@@ -364,14 +364,43 @@ class UnitySkills:
         return self.call('job_logs', jobId=job_id, limit=limit)
 
     def wait_for_job(self, job_id: str, timeout: float = 60.0) -> Dict[str, Any]:
-        """Block via the job_wait skill until the job ends or `timeout` elapses.
+        """Wait for a job to finish, polling GET /jobs/{id} until terminal or `timeout`.
 
-        `timeout` (default 60s) is converted to ms and passed explicitly as job_wait's
-        `timeoutMs`, overriding job_wait's own REST default of 10000 (10s).
+        Polls the lightweight /jobs/{id} snapshot instead of calling the blocking
+        `job_wait` skill. `job_wait` runs a Thread.Sleep loop on the Unity main thread,
+        which freezes the editor and blocks /health and every other request for the full
+        timeout (up to 60s here). Polling issues only short, non-blocking reads, so the
+        main thread stays free between polls and /health stays responsive.
+
+        `timeout` (default 60s) is the total wait budget; poll interval starts at 0.5s
+        and backs off to 5s for long-running jobs.
+
+        Returns a shape compatible with the historical job_wait result (`success`,
+        `status`, `reportId`, `report`, `error`, …). `success` is True only when the
+        job reached `completed` (stricter than the old job_wait, which always returned
+        success=True for any found job — a failed/cancelled job now reports success=False).
         """
-        timeout_ms = max(1000, int(timeout * 1000))
-        result = self.call('job_wait', jobId=job_id, timeoutMs=timeout_ms)
-        if isinstance(result, dict) and result.get('reportId'):
+        snapshot = self.poll_job(job_id, interval=0.5, timeout=timeout)
+        if not isinstance(snapshot, dict):
+            return snapshot or {'success': False, 'error': 'wait_for_job returned no snapshot'}
+
+        status = snapshot.get('status')
+        result = {
+            'success': status == 'completed',
+            'jobId': snapshot.get('jobId'),
+            'status': status,
+            'progress': snapshot.get('progress'),
+            'currentStage': snapshot.get('currentStage'),
+            'reportId': snapshot.get('reportId'),
+            'workflowId': snapshot.get('relatedWorkflowId'),
+            'resultSummary': snapshot.get('resultSummary'),
+            'error': snapshot.get('error'),
+            'details': snapshot.get('resultData'),
+            'terminal': snapshot.get('terminal'),
+        }
+        if snapshot.get('_pollTimeout'):
+            result['timedOut'] = True
+        if result.get('reportId'):
             report = self.call('batch_report_get', reportId=result['reportId'])
             if isinstance(report, dict) and report.get('success'):
                 result['report'] = report
@@ -556,8 +585,9 @@ def get_job_logs(job_id: str, limit: int = 100) -> Dict[str, Any]:
 def wait_for_job(job_id: str, timeout: float = 60.0) -> Dict[str, Any]:
     """Wait for a UnitySkills job and include the final batch report when available.
 
-    `timeout` defaults to 60s and is passed to the server as job_wait's timeoutMs,
-    overriding job_wait's own REST default of 10s.
+    Polls GET /jobs/{id} (non-blocking) until the job is terminal or `timeout` elapses;
+    does not call the blocking `job_wait` skill, so the Unity main thread is not frozen.
+    `timeout` defaults to 60s.
     """
     return _get_default_client().wait_for_job(job_id, timeout=timeout)
 
