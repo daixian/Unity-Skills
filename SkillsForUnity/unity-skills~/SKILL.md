@@ -11,8 +11,9 @@ Use this skill when the user wants to automate the Unity Editor through the loca
 
 The schema is the canonical source for exact skill names, parameters, defaults, and returns — **but you do not need it for every call**. For common read-only or simple write calls whose parameters you already know, call directly; query schema only when a skill name or signature is uncertain.
 
-- `unity_skills.get_skill_schema()` / `GET /skills/schema` — full schema (large: ~`578 KB` for all skills). Fetch at most **once per session** and reuse it; do not re-pull before every call.
-- `GET /skills?category=<Category>` — returns a **manifest** (lightweight: `mode` / `approvalBehavior` / parameters per skill), **not** the full schema. Use it to scope by category. Note: `/skills/schema` itself does **not** currently filter by category.
+- **Awareness — first fetch (lite)**: `GET /skills?summary=1` — every skill's name, one-line description, category, operation, and riskLevel (~`136 KB` ≈ 34K tokens, server-cached). Pull this FIRST per session for full project awareness cheaply: you see all 726 skills and what each does, so you can pick the best one — including cross-module ones you'd otherwise miss (e.g. a manual loop instead of `batch_query_*`). Skipping awareness risks myopic, suboptimal choices. This is complete awareness (all skills + descriptions); it omits only execution-detail (parameter schemas, tags, outputs) you pull when acting.
+- **Full detail (when needed)**: `unity_skills.get_skill_schema()` / `GET /skills/schema` — full schema with exact parameter schemas (~`618 KB` ≈ 150K tokens, client-cached 300s). Pull when the lite view didn't surface a matching skill, or when you need exact parameter types/defaults to execute. Don't re-pull every call.
+- **Per-module detail**: `GET /skills/schema?category=<Category>` — scoped schema (~17–27 KB, server-cached) for exact signatures of one module you're about to execute. A supplement to awareness, not a replacement.
 
 Use module `SKILL.md` files for routing guidance, guardrails, and minimal examples, not as the canonical source of exact signatures.
 
