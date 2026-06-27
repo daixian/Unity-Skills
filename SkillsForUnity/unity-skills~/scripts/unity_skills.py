@@ -22,7 +22,7 @@ import threading
 from typing import Any, Dict, List, Optional
 from urllib.parse import urlencode
 
-__version__ = "2.0.6"
+__version__ = "2.0.7"
 
 UNITY_URL = "http://localhost:8090"
 DEFAULT_PORT = 8090

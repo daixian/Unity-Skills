@@ -2,6 +2,17 @@
 
 All notable changes to **UnitySkills** will be documented in this file.
 
+## [2.0.7] - 2026-06-27
+
+### Fixed
+
+- **`package.json.meta` 与上游 `unity-mcp` 的 GUID 冲突(issue #41)** — `SkillsForUnity/package.json.meta` 的 GUID `a2f7ae0675bf4fb478a0a1df7a3f6c64` 与本项目 fork 上游 `com.coplaydev.unity-mcp` 的 `package.json.meta` 逐字节相同(fork 时连同 `.meta` 一起带过来未重新分配),两包同装时 Unity 把两包资产判为同一 ownership、触发 6 条 missing script 警告。替换为独立 uuid4 GUID `4a81947acf6349c4b37a44f35a71d7e8`(通过启发式自校验、全仓库无外部引用;本包 Skills 靠反射发现、不依赖 GUID 引用,替换不破坏内部链路)。全量对照上游 883 个 `.meta` GUID,确认本仓库与其零交集。
+
+### Changed
+
+- **`/metacheck` 新增"已知第三方包 GUID 黑名单"检查** — 此前 metacheck 只能靠启发式抓"可猜测的伪 GUID",查不出 fork/衍生场景下与上游逐字节相同的确定性冲突(此类 GUID 格式规范、不命中任何伪随机模式,启发式审计会误判合格)。新增步骤 2b,维护已知冲突 GUID 表并把上游 `unity-mcp` 的 `package.json.meta` GUID 列为首条记录,同时给出"克隆上游一次性收集全部 GUID 扩充黑名单"的方法,堵住该盲区。
+- **版本号更新** — `SkillsLogger.Version` / `package.json` / Python helper `__version__` / `agent.md` / README 当前版本标记同步提升到 `2.0.7`。
+
 ## [2.0.6] - 2026-06-23
 
 ### Fixed
