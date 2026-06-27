@@ -780,9 +780,9 @@ def get_skills(category: str = None, operation: str = None, tags: str = None,
     except Exception as e:
         return {"status": "error", "error": str(e)}
 
-# Process-wide lite-summary cache: /skills?summary=1 is ~136 KB (~34K tokens) — the cheap
+# Process-wide lite-summary cache: /skills?summary=1 is ~143 KB (~35K tokens) — the cheap
 # awareness layer (name/desc/category/operation/riskLevel per skill). Cache a successful
-# result per server URL for a short TTL so the agent doesn't re-pay 34K tokens to recall
+# result per server URL for a short TTL so the agent doesn't re-pay 35K tokens to recall
 # the toolset. Pull the full schema (get_skill_schema) for exact parameter schemas.
 _skills_summary_cache: Dict[str, Dict[str, Any]] = {}
 _SKILLS_SUMMARY_TTL = 300.0
@@ -791,7 +791,7 @@ _SKILLS_SUMMARY_TTL = 300.0
 def get_skills_summary(force_refresh: bool = False) -> Dict[str, Any]:
     """Get the lite awareness manifest (name/desc/category/operation/riskLevel per skill).
 
-    The token-friendly first fetch (~34K tokens vs ~150K full) for project awareness;
+    The token-friendly first fetch (~35K tokens vs ~150K full) for project awareness;
     server-cached and client-cached per URL for _SKILLS_SUMMARY_TTL seconds. Pull the full
     schema via get_skill_schema() when you need exact parameter schemas to execute.
     """
@@ -812,7 +812,7 @@ def get_skills_summary(force_refresh: bool = False) -> Dict[str, Any]:
         return {"status": "error", "error": str(e)}
 
 
-# Process-wide schema cache: /skills/schema is ~578 KB; re-fetching it per call is the
+# Process-wide schema cache: /skills/schema is ~618 KB; re-fetching it per call is the
 # single biggest client-side token sink. Cache a successful result per server URL for a
 # short TTL and reuse it within a session.
 _schema_cache: Dict[str, Dict[str, Any]] = {}
@@ -825,7 +825,7 @@ def get_skill_schema(force_refresh: bool = False) -> Dict[str, Any]:
     This is the preferred source for exact skill names, parameters, and metadata
     when prompt/token budget matters more than loading large SKILL.md files.
 
-    The full schema is large (~578 KB), so a successful result is cached per server URL
+    The full schema is large (~618 KB), so a successful result is cached per server URL
     for `_SCHEMA_CACHE_TTL` seconds. Pass force_refresh=True to bypass the cache (e.g. after
     adding/renaming skills and recompiling).
     """

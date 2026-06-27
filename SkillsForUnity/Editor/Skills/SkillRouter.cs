@@ -1034,7 +1034,7 @@ namespace UnitySkills
         /// <summary>
         /// Same category/operation/tags/readOnly/q filtering as GetFilteredManifest, but tags the
         /// payload with manifestType "schema" — backs GET /skills/schema?category=... (scoped schema,
-        /// avoids pulling the full ~578KB schema when only one category is needed).
+        /// avoids pulling the full ~618KB schema when only one category is needed).
         /// </summary>
         public static string GetFilteredSchema(string queryString) => BuildFilteredOutput(queryString, "schema");
 
@@ -1213,7 +1213,7 @@ namespace UnitySkills
                 filters,
                 summary,
                 summaryHint = summary
-                    ? "AWARENESS ONLY — parameter schemas are omitted and descriptions are informal/partial (some omit parameter hints entirely). Before executing any skill listed here, validate its parameters with ?mode=dryRun (the server returns unknownParam suggestions + the full parameter schema) or fetch its scoped schema GET /skills/schema?category=<Category>. Do NOT guess parameters from descriptions alone."
+                    ? "AWARENESS ONLY — parameter schemas are omitted and descriptions are informal (human-written; some omit parameter hints entirely), not a formal signature. Before executing any skill listed here, validate its parameters with ?mode=dryRun (the server returns unknownParam suggestions + the full parameter schema) or fetch its scoped schema GET /skills/schema?category=<Category>. Do NOT guess parameters from descriptions alone."
                     : null,
                 categories = Enum.GetNames(typeof(SkillCategory)).Where(c => c != "Uncategorized").ToArray(),
                 operationTypes = Enum.GetNames(typeof(SkillOperation)),

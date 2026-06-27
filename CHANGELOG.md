@@ -6,7 +6,7 @@ All notable changes to **UnitySkills** will be documented in this file.
 
 ### Added
 
-- **`?summary=1` 轻量认知 manifest 端点(第三层 schema 取用)** — 此前 agent 取技能清单只有两个粒度:全量 `/skills/schema`(~618KB/~154K token,含每技能参数 schema)或 scoped `/skills/schema?category=`(~24KB/类,只看一个模块,易致跨模块盲选)。新增 `GET /skills?summary=1`(也接受 `?includeSchema=false`,对齐 `/skills/recommend` 既有约定),返回每技能 `name`/`description`(截首句)/`category`/`operation`/`riskLevel` 五字段,~136KB/~34K token(全量 22%),服务端按 query 缓存。复用既有 `verbose` Summary Mode 哲学(截首句因描述里的参数提示与 `parameters` 字段冗余,截掉不损认知)。供 agent 首次拉取做**完整项目认知**(全部 726 技能 + 各干什么),执行前再拉 scoped 补精确参数,省 token 不损认知。裸 `/skills` 保持全量(向后兼容)。
+- **`?summary=1` 轻量认知 manifest 端点(第三层 schema 取用)** — 此前 agent 取技能清单只有两个粒度:全量 `/skills/schema`(~618KB/~150K token,含每技能参数 schema)或 scoped `/skills/schema?category=`(~13–44KB/类,只看一个模块,易致跨模块盲选)。新增 `GET /skills?summary=1`(也接受 `?includeSchema=false`,对齐 `/skills/recommend` 既有约定),返回每技能 `name`/`description`(完整,非截断)/`category`/`operation`/`riskLevel` 五字段,实测 ~143KB/~35K token(全量约 23%),服务端按 query 缓存。省 token 的来源是省掉 `parameters`/`tags`/`outputs` 等执行细节字段,描述本身保留全文以保认知完整(awareness 层无 `parameters` 字段,描述里的参数提示不与之冗余,截断反损认知);执行前由 dryRun gate 补精确参数。供 agent 首次拉取做**完整项目认知**(全部 726 技能 + 各干什么),执行前再拉 scoped 补精确参数,省 token 不损认知。裸 `/skills` 保持全量(向后兼容)。
 - **`get_skills_summary()` Python helper** — 镜像 `get_skill_schema` 的进程内 300s 缓存模式拉取 lite 认知层,重复调用 0ms 缓存命中、不重复付 token。
 
 ### Fixed
