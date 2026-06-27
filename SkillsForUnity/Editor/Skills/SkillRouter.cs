@@ -76,6 +76,15 @@ namespace UnitySkills
         private static string _cachedSchema;
         private static Dictionary<string, List<SkillInfo>> _outputIndex;
 
+        // Filtered (scoped) schema/manifest cache, keyed by a canonical form of the query
+        // string. The full schema/manifest are cached (_cachedSchema/_cachedManifest), but the
+        // filtered variants (?category=… etc.) were rebuilt + re-serialized on every request —
+        // the very path agents use to save tokens (scoped is ~24KB vs ~618KB full). Content is
+        // byte-deterministic per query until skills change, so caching is safe; cleared on
+        // Refresh() (domain reload / skill add-remove).
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _filteredOutputCache =
+            new System.Collections.Concurrent.ConcurrentDictionary<string, string>();
+
         /// <summary>Number of registered skills. Avoids parsing manifest just for a count.</summary>
         public static int SkillCount
         {
@@ -972,6 +981,7 @@ namespace UnitySkills
                 _cachedManifest = null;
                 _cachedSchema = null;
                 _outputIndex = null;
+                _filteredOutputCache.Clear();
                 _workflowTrackedSkills = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             }
             Initialize();
@@ -1035,6 +1045,12 @@ namespace UnitySkills
             if (filters.Count == 0)
                 return manifestType == "schema" ? GetSchema() : GetManifest();
 
+            // Filtered output is byte-deterministic per query until Refresh(); cache it so
+            // repeated scoped pulls (?category=…) don't rebuild + re-serialize all skills each.
+            string cacheKey = BuildFilteredOutputCacheKey(filters, manifestType);
+            if (_filteredOutputCache.TryGetValue(cacheKey, out var cachedOutput))
+                return cachedOutput;
+
             IEnumerable<SkillInfo> filtered = _skills.Values;
 
             if (filters.TryGetValue("category", out var cat))
@@ -1061,8 +1077,31 @@ namespace UnitySkills
             }
 
             var results = filtered.ToList();
-            var manifest = BuildManifest(results, filtered: true, filters, manifestType);
-            return JsonConvert.SerializeObject(manifest, _jsonSettings);
+
+            // ?summary=1 (or ?includeSchema=false, aligned with /skills/recommend's convention)
+            // → lite awareness manifest: parameter schemas omitted, descriptions truncated.
+            bool summary = filters.TryGetValue("summary", out var sumVal) &&
+                (sumVal == "1" || sumVal.Equals("true", StringComparison.OrdinalIgnoreCase));
+            if (!summary && filters.TryGetValue("includeSchema", out var incVal) &&
+                (incVal == "0" || incVal.Equals("false", StringComparison.OrdinalIgnoreCase)))
+                summary = true;
+
+            var manifest = BuildManifest(results, filtered: true, filters, manifestType, summary);
+            var json = JsonConvert.SerializeObject(manifest, _jsonSettings);
+            _filteredOutputCache[cacheKey] = json;
+            return json;
+        }
+
+        private static string BuildFilteredOutputCacheKey(Dictionary<string, string> filters, string manifestType)
+        {
+            // Canonical, case-normalized key. Every filter comparison in BuildFilteredOutput is
+            // case-insensitive (category/tags/readonly OrdinalIgnoreCase, operation TryParse
+            // ignoreCase=true, q ToLowerInvariant), so lowercasing keys+values collapses
+            // equivalent queries (?category=GameObject == ?Category=gameobject) onto one entry.
+            var parts = filters.Keys
+                .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+                .Select(k => $"{k.ToLowerInvariant()}={(filters[k] ?? string.Empty).ToLowerInvariant()}");
+            return manifestType + "|" + string.Join("|", parts);
         }
 
         private static bool ContainsParameter(IEnumerable<string> parameterNames, string parameterName)
@@ -1157,7 +1196,7 @@ namespace UnitySkills
                 .Replace("name / instanceId / path", "name / entityId / instanceId / path");
         }
 
-        private static object BuildManifest(IEnumerable<SkillInfo> skills, bool filtered, Dictionary<string, string> filters, string manifestType)
+        private static object BuildManifest(IEnumerable<SkillInfo> skills, bool filtered, Dictionary<string, string> filters, string manifestType, bool summary = false)
         {
             var skillArray = skills
                 .OrderBy(s => s.Name, StringComparer.OrdinalIgnoreCase)
@@ -1172,33 +1211,69 @@ namespace UnitySkills
                 totalSkills = skillArray.Length,
                 filtered,
                 filters,
+                summary,
+                summaryHint = summary
+                    ? "Lite awareness manifest: each skill carries only name/description(first sentence)/category/operation/riskLevel. Drop ?summary=1 for the full manifest (parameter schemas, tags, outputs, requiresInput, requiresPackages, mode, and behavior flags)."
+                    : null,
                 categories = Enum.GetNames(typeof(SkillCategory)).Where(c => c != "Uncategorized").ToArray(),
                 operationTypes = Enum.GetNames(typeof(SkillOperation)),
                 reservedBodyParameters = _reservedBodyParameters.OrderBy(x => x).ToArray(),
                 workflowTrackedSkills = _workflowTrackedSkills.OrderBy(name => name).ToArray(),
-                skills = skillArray.Select(s => new
-                {
-                    name = s.Name,
-                    description = GetEffectiveDescription(s),
-                    category = s.Category != SkillCategory.Uncategorized ? s.Category.ToString() : null,
-                    operation = FormatOperation(s.Operation),
-                    tags = s.Tags,
-                    outputs = GetEffectiveOutputs(s),
-                    requiresInput = s.RequiresInput,
-                    readOnly = s.ReadOnly,
-                    tracksWorkflow = s.TracksWorkflow,
-                    mutatesScene = s.MutatesScene,
-                    mutatesAssets = s.MutatesAssets,
-                    mayTriggerReload = s.MayTriggerReload,
-                    mayEnterPlayMode = s.MayEnterPlayMode,
-                    supportsDryRun = s.SupportsDryRun,
-                    riskLevel = s.RiskLevel,
-                    requiresPackages = s.RequiresPackages,
-                    mode = SkillsModeManager.SkillModeToWire(s.Mode),
-                    approvalBehavior = SkillsModeManager.ApprovalBehaviorForSkill(s),
-                    parameters = BuildParameterSchema(s)
-                })
+                skills = summary
+                    ? skillArray.Select(s => (object)new
+                    {
+                        name = s.Name,
+                        description = TruncateDescription(GetEffectiveDescription(s)),
+                        category = s.Category != SkillCategory.Uncategorized ? s.Category.ToString() : null,
+                        operation = FormatOperation(s.Operation),
+                        riskLevel = s.RiskLevel
+                    })
+                    : skillArray.Select(s => (object)new
+                    {
+                        name = s.Name,
+                        description = GetEffectiveDescription(s),
+                        category = s.Category != SkillCategory.Uncategorized ? s.Category.ToString() : null,
+                        operation = FormatOperation(s.Operation),
+                        tags = s.Tags,
+                        outputs = GetEffectiveOutputs(s),
+                        requiresInput = s.RequiresInput,
+                        readOnly = s.ReadOnly,
+                        tracksWorkflow = s.TracksWorkflow,
+                        mutatesScene = s.MutatesScene,
+                        mutatesAssets = s.MutatesAssets,
+                        mayTriggerReload = s.MayTriggerReload,
+                        mayEnterPlayMode = s.MayEnterPlayMode,
+                        supportsDryRun = s.SupportsDryRun,
+                        riskLevel = s.RiskLevel,
+                        requiresPackages = s.RequiresPackages,
+                        mode = SkillsModeManager.SkillModeToWire(s.Mode),
+                        approvalBehavior = SkillsModeManager.ApprovalBehaviorForSkill(s),
+                        parameters = BuildParameterSchema(s)
+                    })
             };
+        }
+
+        /// <summary>
+        /// Truncates a skill description to its first sentence (the "what it does" part) for
+        /// summary/awareness manifests. The trailing parameter hints baked into descriptions
+        /// are redundant with the <c>parameters</c> field (omitted in summary mode), so this
+        /// truncation costs no real awareness — only the execution-detail tail is dropped.
+        /// Caps at ~140 characters when no sentence boundary is found.
+        /// </summary>
+        private static string TruncateDescription(string desc)
+        {
+            if (string.IsNullOrEmpty(desc)) return desc;
+            const int cap = 140;
+            if (desc.Length <= cap) return desc;
+
+            for (int i = 0; i < desc.Length && i <= cap; i++)
+            {
+                char c = desc[i];
+                if (c == '.' && i + 1 < desc.Length && desc[i + 1] == ' ') return desc.Substring(0, i + 1).TrimEnd();
+                if (c == '。') return desc.Substring(0, i + 1).TrimEnd();
+                if (c == '\n' || c == '\r') return desc.Substring(0, i).TrimEnd();
+            }
+            return desc.Substring(0, cap).TrimEnd() + "…";
         }
 
         // ========== Skill Recommendations ==========
