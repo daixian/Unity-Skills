@@ -780,6 +780,38 @@ def get_skills(category: str = None, operation: str = None, tags: str = None,
     except Exception as e:
         return {"status": "error", "error": str(e)}
 
+# Process-wide lite-summary cache: /skills?summary=1 is ~136 KB (~34K tokens) — the cheap
+# awareness layer (name/desc/category/operation/riskLevel per skill). Cache a successful
+# result per server URL for a short TTL so the agent doesn't re-pay 34K tokens to recall
+# the toolset. Pull the full schema (get_skill_schema) for exact parameter schemas.
+_skills_summary_cache: Dict[str, Dict[str, Any]] = {}
+_SKILLS_SUMMARY_TTL = 300.0
+
+
+def get_skills_summary(force_refresh: bool = False) -> Dict[str, Any]:
+    """Get the lite awareness manifest (name/desc/category/operation/riskLevel per skill).
+
+    The token-friendly first fetch (~34K tokens vs ~150K full) for project awareness;
+    server-cached and client-cached per URL for _SKILLS_SUMMARY_TTL seconds. Pull the full
+    schema via get_skill_schema() when you need exact parameter schemas to execute.
+    """
+    try:
+        client = _get_default_client()
+        key = client.url or "default"
+        now = time.time()
+        cached = _skills_summary_cache.get(key)
+        if not force_refresh and cached and (now - cached["ts"]) < _SKILLS_SUMMARY_TTL:
+            return cached["data"]
+        response = client._session.get(f"{client.url}/skills?summary=1", timeout=client.timeout)
+        response.encoding = 'utf-8'
+        data = response.json()
+        if isinstance(data, dict) and data.get("summary") is True:
+            _skills_summary_cache[key] = {"ts": now, "data": data}
+        return data
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
 # Process-wide schema cache: /skills/schema is ~578 KB; re-fetching it per call is the
 # single biggest client-side token sink. Cache a successful result per server URL for a
 # short TTL and reuse it within a session.
