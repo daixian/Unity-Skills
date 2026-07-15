@@ -2,6 +2,17 @@
 
 All notable changes to **UnitySkills** will be documented in this file.
 
+## [2.1.4-beta.1] - 2026-07-15
+
+### Fixed
+
+- **多开 Unity 时自动连接错误实例** — Python 客户端自动发现现在优先匹配当前工作目录所属的 Unity 项目，再按心跳时间尝试其他实例，避免多项目同时打开时连到错误端口。
+
+### Changed
+
+- **Skill 扫描性能优化** — 路由初始化和编辑器技能列表改用 Unity `TypeCache` 查找标记了 `UnitySkillAttribute` 的方法，避免 Domain Reload 后全量枚举程序集与类型。
+- **版本号更新** — `SkillsLogger.Version` / `package.json` / Python helper `__version__` / `agent.md` / README 当前版本标记同步提升到 `2.1.4-beta.1`。
+
 ## [2.1.3] - 2026-07-13
 
 ### Fixed

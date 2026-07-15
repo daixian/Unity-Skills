@@ -68,3 +68,5 @@ temp/
 # Local testing harness
 scripts/local-test/
 nul
+
+.agents/config/npm.json
