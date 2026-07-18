@@ -3,11 +3,11 @@
 > **本文件面向"开发这个项目的 AI"**，非"调用该项目 REST API 的 AI"。
 > 后者请读 `SkillsForUnity/unity-skills~/SKILL.md`。
 
-通过 REST API 让 AI 直接控制 Unity 编辑器。733 个 REST Skills + 20 个 Advisory 模块。
+通过 REST API 让 AI 直接控制 Unity 编辑器。738 个 REST Skills + 23 个 Advisory 模块。
 
 | 项目 | 值 |
 |------|----|
-| 版本 | 2.1.4-beta.1 |
+| 版本 | 2.2.1-beta.1 |
 | 技术栈 | C# (Unity Editor Plugin) + Python (Client) |
 | Unity | 2022.3+（已验证 Unity 6 / 6000.x） |
 | 协议 | MIT |
@@ -24,7 +24,7 @@ AI Agent ──HTTP──▶ unity_skills.py ──POST localhost:8090-8100─�
                                                         │
                                               SkillRouter (反射发现 [UnitySkill])
                                                         │
-                                              51 个 *Skills.cs (733 Skills)
+                                              52 个 *Skills.cs (738 Skills)
                                                         │
                                          WorkflowManager (持久化撤销/回滚)
                                          RegistryService (多实例发现)
@@ -57,7 +57,7 @@ Unity-Skills/
 │   │   │   ├── GameObjectFinder.cs       # 统一查找器 (name/instanceId/path)
 │   │   │   ├── BatchExecutor.cs          # 批量操作框架
 │   │   │   ├── SkillInstaller.cs         # AI 工具一键安装
-│   │   │   └── *Skills.cs × 51           # 功能模块 (共 733 Skills)
+│   │   │   └── *Skills.cs × 52           # 功能模块 (共 738 Skills)
 │   │   └── UI/                           # Editor UI (USS + UXML + EditorWindow)
 │   │       ├── UnitySkillsWindow.{cs,uxml,uss}    # 主窗口
 │   │       ├── AuditLogWindow.{uxml,uss}          # 审计窗口
@@ -66,7 +66,7 @@ Unity-Skills/
 │   └── unity-skills~/                    # AI Skill 模板（波浪线隐藏，随包分发）
 │       ├── SKILL.md                      # 调用方文档（"用"项目）
 │       ├── scripts/unity_skills.py
-│       ├── skills/                       # 69 个模块文档 (49 REST + 20 advisory)
+│       ├── skills/                       # 71 个模块文档 (48 REST + 23 advisory)
 │       └── references/
 ├── .claude/commands/                     # 自定义命令
 ├── docs/SETUP_GUIDE.md
@@ -168,7 +168,7 @@ public static object SkillName(string name, float x = 0f) { ... }
 
 ---
 
-## Skills 模块 (51 个功能模块, 733 Skills)
+## Skills 模块 (52 个功能模块, 738 Skills)
 
 | 模块 | 数量 | 模块 | 数量 | 模块 | 数量 |
 |------|:----:|------|:----:|------|:----:|
@@ -176,24 +176,25 @@ public static object SkillName(string name, float x = 0f) { ... }
 | UI | 29 | UIToolkit | 25 | ShaderGraph | 23 |
 | Workflow | 23 | ProBuilder* | 22 | XR* | 22 |
 | Batch | 22 | DOTween* | 21 | Material | 21 |
-| PostProcess† | 10 | GameObject | 19 | Perception | 18 |
-| Volume† | 9 | URP† | 7 | Decal† | 7 |
-| Test | 13 | Editor | 14 | Script | 12 |
-| Timeline | 12 | Physics | 12 | Asset | 11 |
-| AssetImport | 11 | Camera | 12 | Package | 11 |
-| Prefab | 11 | Shader | 11 | Graphics | 11 |
-| Animator | 10 | Audio | 10 | Cleaner | 10 |
-| Component | 14 | Console | 10 | Debug | 10 |
-| Event | 11 | Light | 10 | Model | 10 |
-| NavMesh | 10 | Optimization | 10 | Profiler | 10 |
-| Scene | 10 | ScriptableObject | 13 | Smart | 10 |
-| Terrain | 10 | Texture | 10 | Validation | 10 |
-| Project | 10 | Sample | 8 | Diagnose | 1 |
+| PrimeTween* | 5 | PostProcess† | 10 | GameObject | 19 |
+| Perception | 18 | Volume† | 9 | URP† | 7 |
+| Decal† | 7 | Test | 13 | Editor | 14 |
+| Script | 12 | Timeline | 12 | Physics | 12 |
+| Asset | 11 | AssetImport | 11 | Camera | 12 |
+| Package | 11 | Prefab | 11 | Shader | 11 |
+| Graphics | 11 | Animator | 10 | Audio | 10 |
+| Cleaner | 10 | Component | 14 | Console | 10 |
+| Debug | 10 | Event | 11 | Light | 10 |
+| Model | 10 | NavMesh | 10 | Optimization | 10 |
+| Profiler | 10 | Scene | 10 | ScriptableObject | 13 |
+| Smart | 10 | Terrain | 10 | Texture | 10 |
+| Validation | 10 | Project | 10 | Sample | 8 |
+| Diagnose | 1 |  |  |  |
 
-\*ProBuilder 需 `com.unity.probuilder`，XR 需 `com.unity.xr.interaction.toolkit`，Netcode 需 `com.unity.netcode.gameobjects`，YooAsset 需 `com.tuyoogame.yooasset (≥2.3.15)`，DOTween 需 `DG.Tweening`
+\*ProBuilder 需 `com.unity.probuilder`，XR 需 `com.unity.xr.interaction.toolkit`，Netcode 需 `com.unity.netcode.gameobjects`，YooAsset 需 `com.tuyoogame.yooasset (≥2.3.15)`，DOTween 需 `DG.Tweening`，PrimeTween 需 `com.kyrylokuzyk.primetween`
 †Volume / PostProcess / Decal / URP 需 `com.unity.render-pipelines.universal`（URP 未安装时这 4 个模块以同名 stub 返回 `NoURP()` 提示）。
 
-**Advisory 模块 (20)**：architecture, patterns, performance, asmdef, async, inspector, blueprints, adr, project-scout, scene-contracts, script-roles, scriptdesign, testability, netcode-design, yooasset-design, addressables-design, unitask-design, dotween-design, shadergraph-design, yaml-editing — **纯架构/设计指导文档，无 REST Skills，无 C# 实现**；新增 advisory 时只动 `unity-skills~/skills/` 下文档，不要在 Editor/Skills/ 加 stub。
+**Advisory 模块 (23)**：architecture, patterns, performance, asmdef, async, inspector, blueprints, adr, project-scout, scene-contracts, script-roles, scriptdesign, testability, bookmark, history, netcode-design, yooasset-design, addressables-design, unitask-design, dotween-design, primetween-design, shadergraph-design, yaml-editing — **纯架构/设计指导文档，无 REST Skills，无 C# 实现**；新增 advisory 时只动 `unity-skills~/skills/` 下文档，不要在 Editor/Skills/ 加 stub。
 
 ---
 
