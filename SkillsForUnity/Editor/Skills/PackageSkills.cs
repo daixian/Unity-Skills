@@ -19,7 +19,7 @@ namespace UnitySkills
         {
             var packages = PackageManagerHelper.InstalledPackages;
             if (packages == null)
-                return new { error = "Package list not ready. Call package_refresh first." };
+                return PackageCacheRefreshing();
 
             var list = packages.Values.Select(p => new { name = p.name, version = p.version, displayName = p.displayName }).ToList();
             return new { success = true, count = list.Count, packages = list };
@@ -35,6 +35,8 @@ namespace UnitySkills
         public static object PackageCheck(string packageId)
         {
             if (Validate.Required(packageId, "packageId") is object err) return err;
+            if (PackageManagerHelper.InstalledPackages == null)
+                return PackageCacheRefreshing(packageId);
 
             var installed = PackageManagerHelper.IsPackageInstalled(packageId);
             var version = PackageManagerHelper.GetInstalledVersion(packageId);
@@ -184,7 +186,6 @@ namespace UnitySkills
             var useV3 = version >= 3;
             var targetVersion = useV3 ? PackageManagerHelper.Cinemachine3Version : PackageManagerHelper.Cinemachine2Version;
 
-            // 检查是否已安装
             var status = PackageManagerHelper.GetCinemachineStatus();
             if (status.installed)
             {
@@ -286,6 +287,9 @@ namespace UnitySkills
             Mode = SkillMode.SemiAuto)]
         public static object PackageGetCinemachineStatus()
         {
+            if (PackageManagerHelper.InstalledPackages == null)
+                return PackageCacheRefreshing();
+
             var status = PackageManagerHelper.GetCinemachineStatus();
             var splinesInstalled = PackageManagerHelper.IsPackageInstalled(PackageManagerHelper.SplinesPackageId);
             var splinesVersion = PackageManagerHelper.GetInstalledVersion(PackageManagerHelper.SplinesPackageId);
@@ -316,7 +320,7 @@ namespace UnitySkills
 
             var packages = PackageManagerHelper.InstalledPackages;
             if (packages == null)
-                return new { error = "Package list not ready. Call package_refresh first." };
+                return PackageCacheRefreshing();
 
             var matches = packages.Values
                 .Where(p => p.name.IndexOf(query, System.StringComparison.OrdinalIgnoreCase) >= 0 ||
@@ -340,7 +344,7 @@ namespace UnitySkills
 
             var packages = PackageManagerHelper.InstalledPackages;
             if (packages == null)
-                return new { error = "Package list not ready. Call package_refresh first." };
+                return PackageCacheRefreshing(packageId);
 
             if (!packages.TryGetValue(packageId, out var pkg))
                 return new { error = $"Package not found: {packageId}" };
@@ -362,7 +366,7 @@ namespace UnitySkills
 
             var packages = PackageManagerHelper.InstalledPackages;
             if (packages == null)
-                return new { error = "Package list not ready. Call package_refresh first." };
+                return PackageCacheRefreshing(packageId);
 
             if (!packages.TryGetValue(packageId, out var pkg))
                 return new { error = $"Package not found: {packageId}" };
@@ -371,6 +375,21 @@ namespace UnitySkills
             return new { success = true, packageId, currentVersion = pkg.version,
                 compatibleVersion = pkg.versions?.compatible, latestVersion = pkg.versions?.latest,
                 allVersions = versions };
+        }
+
+        private static object PackageCacheRefreshing(string packageId = null)
+        {
+            PackageManagerHelper.EnsurePackageListRefresh();
+            return new
+            {
+                success = false,
+                status = "refreshing",
+                cacheReady = false,
+                packageId,
+                message = "Package list is refreshing. Retry shortly.",
+                retryStrategy = SkillErrorResponse.RetryWaitAndRetry,
+                retryAfterSeconds = 2
+            };
         }
     }
 }

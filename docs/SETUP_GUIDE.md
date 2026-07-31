@@ -46,6 +46,8 @@ Then flip the server toggle switch in the top bar. On success, the Console will 
 [UnitySkills] REST Server started at http://localhost:8090/
 ```
 
+To start the server whenever this project opens, enable **Settings → Server → Start on Editor launch**. This is opt-in. It needs **Auto-restart after compile** to stay on as well — otherwise the server won't come back after the first script change triggers a Domain Reload.
+
 Verify with:
 
 ```bash
@@ -90,6 +92,7 @@ If one-click installation is not available for your tool, manually copy the cont
 | Antigravity | `.agents/skills/` | `~/.gemini/antigravity/skills/` |
 | Codex | `.agents/skills/` (shared with Antigravity) | `~/.agents/skills/` |
 | Cursor | `.cursor/skills/` | `~/.cursor/skills/` |
+| OpenCode | `.opencode/skills/` | `~/.config/opencode/skills/` |
 
 ### Supported AI Tools
 
@@ -101,6 +104,7 @@ The following tools have been officially tested:
 | **Claude Code** | ✅ | Intelligent skill intent recognition |
 | **Codex** | ✅ | `$skill` explicit call + implicit intent; auto-discovers `.agents/skills/` |
 | **Cursor** | ✅ | Auto-discovers `.cursor/skills/` and `.agents/skills/`; supports `/skill-name` explicit trigger; visible in Settings → Rules |
+| **OpenCode** | ✅ | Native `.opencode/skills/` workspace and `~/.config/opencode/skills/` global discovery |
 
 > ⚠️ **Universal Compatibility**: UnitySkills follows an open skill standard. **Any AI tool that can read markdown files and make HTTP requests** can use UnitySkills — not limited to the tools listed above. Simply copy the `unity-skills~/` directory contents to your tool's skill or prompt location and ensure the tool can reach `http://localhost:8090`.
 
@@ -109,6 +113,8 @@ The following tools have been officially tested:
 ## 4. Operating Modes (v1.9.0+)
 
 UnitySkills enforces permissions on the **server side** (not just as AI routing hints), aligned with Claude Code permission modes. Switch modes from the ⚙ Settings button in `Window → UnitySkills` → **Server** section.
+
+> Operating modes are one of four governance layers — the others are `?mode=dryRun` preview before execution, the JSONL audit trail after it, and typed workflow rollback when something goes wrong. See **Built for Trust** in the [README](../README.md) for how they fit together.
 
 | Mode | Default for | Behavior |
 |------|-------------|----------|
@@ -193,6 +199,10 @@ with unity_skills.workflow_context("Build Scene", "Create player and environment
     unity_skills.call_skill("component_add", name="Player", componentType="Rigidbody")
 # All operations can be rolled back with workflow_undo_task
 ```
+
+Snapshots are tiered (created / moved / deleted / modified / setting) and asset bytes are kept in a deduplicated content-addressed store rather than embedded in the history JSON, so history stays small and auto-cleans itself. Deletes now restore fully, including `.cs` scripts. **Editor/project setting operations are now revertible too** — e.g. quality level, render pipeline, physics gravity/layer collisions, debug defines, console toggles, and added tags. Use `workflow_clear_history` to wipe all tracking data (irreversible; does not undo already-applied changes).
+
+**Known limitations:** `scene_save` undo restores the on-disk `.unity` file, so an already-open scene needs a manual Reload Scene; objects created in a never-saved scene lose their identity across an Editor restart and will be reported as failed on undo; external side effects such as Package Manager operations cannot be rolled back.
 
 ### CLI Usage
 

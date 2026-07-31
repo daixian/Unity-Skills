@@ -9,8 +9,7 @@ namespace UnitySkills
 {
     /// <summary>
     /// Component management skills - add, remove, get, set properties.
-    /// Now supports finding by name, instanceId, or path.
-    /// Enhanced with advanced type conversion and reference resolution.
+    /// Supports finding by name, instanceId, or path, with advanced type conversion and reference resolution.
     /// </summary>
     public static class ComponentSkills
     {
@@ -87,7 +86,6 @@ namespace UnitySkills
 
             var comp = Undo.AddComponent(go, type);
 
-            // Record created component for workflow undo if recording
             if (WorkflowManager.IsRecording)
             {
                 WorkflowManager.SnapshotCreatedComponent(comp);
@@ -152,8 +150,9 @@ namespace UnitySkills
             Tags = new[] { "remove", "detach", "destroy" },
             Outputs = new[] { "gameObject", "removed" },
             RequiresInput = new[] { "gameObject", "component" },
-            TracksWorkflow = true,
-            MutatesScene = true)]
+            TracksWorkflow = true, SkipAutoPresnapshot = true,
+            MutatesScene = true,
+            RiskLevel = "medium")]
         public static object ComponentRemove(string name = null, int instanceId = 0, string path = null, string componentType = null, int componentIndex = 0)
         {
             if (Validate.Required(componentType, "componentType") is object err) return err;
@@ -175,7 +174,6 @@ namespace UnitySkills
 
             var comp = components[componentIndex];
 
-            // Check if it's a required component
             var requiredBy = GetRequiredByComponents(go, type);
             if (requiredBy.Any())
                 return new {
@@ -183,8 +181,8 @@ namespace UnitySkills
                     hint = "Remove dependent components first"
                 };
 
-            WorkflowManager.SnapshotObject(comp);
-            Undo.DestroyObjectImmediate(comp);
+            if (!WorkflowManager.DeleteSceneObject(comp))
+                return new { error = $"Failed to capture and remove {componentType}" };
             EditorUtility.SetDirty(go);
 
             return new { success = true, gameObject = go.name, removed = componentType };
@@ -195,7 +193,8 @@ namespace UnitySkills
             Tags = new[] { "remove", "detach", "destroy", "batch" },
             Outputs = new[] { "gameObject", "removed", "count" },
             RequiresInput = new[] { "gameObject", "component" },
-            TracksWorkflow = true)]
+            TracksWorkflow = true, SkipAutoPresnapshot = true,
+            RiskLevel = "medium")]
         public static object ComponentRemoveBatch(string items)
         {
             return BatchExecutor.Execute<BatchRemoveComponentItem>(items, item =>
@@ -217,8 +216,8 @@ namespace UnitySkills
                 Undo.RecordObject(go, "Batch Remove Component");
                 foreach (var c in components)
                 {
-                    WorkflowManager.SnapshotObject(c);
-                    Undo.DestroyObjectImmediate(c);
+                    if (!WorkflowManager.DeleteSceneObject(c))
+                        throw new System.Exception($"Failed to capture and remove {item.componentType}");
                 }
 
                 EditorUtility.SetDirty(go);
@@ -303,7 +302,6 @@ namespace UnitySkills
             if (comp == null)
                 return new { error = $"Component not found: {componentType}" };
 
-            // Find property or field (with caching)
             var (prop, field) = FindMember(type, propertyName);
 
             if (prop == null && field == null)
@@ -389,7 +387,6 @@ namespace UnitySkills
                 if (comp == null)
                     throw new System.Exception($"Component not found: {item.componentType}");
 
-                // Find property or field (with caching)
                 var (prop, field) = FindMember(type, item.propertyName);
 
                 if (prop == null && field == null)
@@ -667,7 +664,6 @@ namespace UnitySkills
         {
             if (string.IsNullOrEmpty(name)) return null;
             
-            // Check cache first
             if (_typeCache.TryGetValue(name, out var cached))
                 return cached;
 
@@ -959,7 +955,6 @@ namespace UnitySkills
 
         private static float[] ParseFloatArray(string value, int expectedCount)
         {
-            // Remove parentheses and brackets
             value = value.Trim('(', ')', '[', ']', '{', '}');
             var parts = value.Split(new[] { ',', ' ', ';' }, System.StringSplitOptions.RemoveEmptyEntries);
             
@@ -996,7 +991,6 @@ namespace UnitySkills
             if (targetGo == null)
                 return null;
 
-            // Return appropriate type
             if (targetType == typeof(Transform))
                 return targetGo.transform;
             if (targetType == typeof(GameObject))

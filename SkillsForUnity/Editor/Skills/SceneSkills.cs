@@ -5,6 +5,7 @@ using UnityEngine.SceneManagement;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
+using UnitySkills.Internal;
 
 namespace UnitySkills
 {
@@ -32,6 +33,11 @@ namespace UnitySkills
             EditorSceneManager.SaveScene(scene, scenePath);
             AssetDatabase.Refresh();
 
+            // SaveScene wrote the new .unity to disk; record it as Created so undo removes it
+            // (moves into the store, redoable). Lightweight — no file-bytes backup needed.
+            var sceneAsset = AssetDatabase.LoadAssetAtPath<SceneAsset>(scenePath);
+            if (sceneAsset != null) WorkflowManager.SnapshotCreatedAsset(sceneAsset);
+
             return new { success = true, scenePath, sceneName = scene.name };
         }
 
@@ -52,7 +58,7 @@ namespace UnitySkills
             return new { success = true, sceneName = scene.name, scenePath = scene.path };
         }
 
-        [UnitySkill("scene_save", "Save the current scene",
+        [UnitySkill("scene_save", "Save the current scene. Undo restores the on-disk .unity file; if the scene is open, reload it (Reload Scene) to see the reverted state.",
             Category = SkillCategory.Scene, Operation = SkillOperation.Execute,
             Tags = new[] { "save", "persist", "write" },
             Outputs = new[] { "scenePath" },
@@ -68,7 +74,27 @@ namespace UnitySkills
             if (string.IsNullOrEmpty(path))
                 return new { error = "Scene has no path. Provide scenePath parameter." };
 
+            // Make the save reversible. Overwriting an existing .unity = Modified: back up the
+            // old bytes into the content-addressed store BEFORE SaveScene overwrites the file
+            // (undo writes them back to disk). Saving to a brand-new path = Created: record it
+            // AFTER the file exists (undo moves the new file into the store, redo restores it).
+            // Undo/redo act on the disk file; a currently open scene must be reloaded to reflect it.
+            bool existedBefore = File.Exists(path);
+            if (existedBefore)
+            {
+                var oldAsset = AssetDatabase.LoadAssetAtPath<SceneAsset>(path);
+                if (oldAsset != null) WorkflowManager.SnapshotObject(oldAsset);
+            }
+
             EditorSceneManager.SaveScene(scene, path);
+
+            if (!existedBefore)
+            {
+                AssetDatabase.Refresh();
+                var newAsset = AssetDatabase.LoadAssetAtPath<SceneAsset>(path);
+                if (newAsset != null) WorkflowManager.SnapshotCreatedAsset(newAsset);
+            }
+
             return new { success = true, scenePath = path };
         }
 
@@ -159,11 +185,11 @@ namespace UnitySkills
             return names.ToArray();
         }
 
-        [UnitySkill("scene_screenshot", "Capture a screenshot of the GAME VIEW (the final composited frame of all cameras + UI; in Play mode this is the live runtime image, NOT the Scene/editor view). filename is a bare filename only (no path separators); saved under Assets/Screenshots/. Async: the PNG is written ~1 frame later, so if an immediate read fails, wait ~200ms and retry.",
+        [UnitySkill("scene_screenshot", "Capture a screenshot of the GAME VIEW (the final composited frame of all cameras + UI; in Play mode this is the live runtime image, NOT the Scene/editor view). filename is a bare filename only (no path separators); saved under Assets/Screenshots/. Async: the PNG is written ~1 frame later, so if an immediate read fails, wait ~200ms and retry. Set returnImage=true to also get a PNG as base64 in the response, for clients without filesystem access (e.g. remote/MCP) — captured via a separate synchronous read of the last-rendered Game View frame, so it may be a moment older than the file written to disk.",
             Category = SkillCategory.Scene, Operation = SkillOperation.Execute,
             Tags = new[] { "screenshot", "capture", "image", "gameview", "playmode" },
-            Outputs = new[] { "path", "width", "height", "isPlaying", "note" })]
-        public static object SceneScreenshot(string filename = "screenshot.png", int width = 1920, int height = 1080)
+            Outputs = new[] { "path", "width", "height", "isPlaying", "note", "imageBase64", "imageWidth", "imageHeight", "imageBytes" })]
+        public static object SceneScreenshot(string filename = "screenshot.png", int width = 1920, int height = 1080, bool returnImage = false, int maxDimension = 1280)
         {
             // Strip any path components to prevent writing outside Screenshots/
             filename = Path.GetFileName(filename);
@@ -185,7 +211,35 @@ namespace UnitySkills
                 ? "Game View captured (live runtime frame). The PNG is written ~1 frame later; if your immediate read fails, wait ~200ms and retry."
                 : "Game View captured in Edit mode — this is the last rendered Game View frame and may be static or blank. Enter Play mode (editor_play) for a live runtime frame. The PNG is written ~1 frame later; if your immediate read fails, wait ~200ms and retry.";
 
-            return new { success = true, path, width, height, isPlaying, note };
+            var result = new Dictionary<string, object> { ["success"] = true, ["path"] = path, ["width"] = width, ["height"] = height, ["isPlaying"] = isPlaying, ["note"] = note };
+            if (returnImage)
+            {
+                // The on-disk PNG isn't readable yet (written ~1 frame later, see above), so
+                // returnImage uses a separate synchronous in-memory capture of the Game View's
+                // current backbuffer instead of reading `path` back.
+                Texture2D liveTex = null;
+                try
+                {
+                    liveTex = ScreenCapture.CaptureScreenshotAsTexture(superSize);
+                    if (liveTex == null || liveTex.width <= 0 || liveTex.height <= 0)
+                    {
+                        result["note"] = note + " returnImage capture unavailable (no Game View pixels to read); read the saved PNG at 'path' instead.";
+                    }
+                    else
+                    {
+                        var pngBytes = liveTex.EncodeToPNG();
+                        var imageFields = ScreenshotImageEncoder.Encode(pngBytes, liveTex.width, liveTex.height, maxDimension, out var imageError);
+                        if (imageError != null) return imageError;
+                        foreach (var kv in imageFields) result[kv.Key] = kv.Value;
+                    }
+                }
+                finally
+                {
+                    if (liveTex != null) Object.DestroyImmediate(liveTex);
+                }
+            }
+
+            return result;
         }
 
         [UnitySkill("scene_get_loaded", "Get list of all currently loaded scenes",
@@ -239,7 +293,6 @@ namespace UnitySkills
 
             if (sceneToUnload.isDirty)
             {
-                // Auto-save before unload
                 EditorSceneManager.SaveScene(sceneToUnload);
             }
 

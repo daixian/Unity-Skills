@@ -14,6 +14,56 @@ namespace UnitySkills
     public static class ProjectSkills
     {
         /// <summary>
+        /// Registers a restorer for the project Tags list so project_add_tag is reversible via
+        /// workflow undo/redo (undo removes the added tag by restoring the prior tag set).
+        /// Runs on domain load.
+        /// </summary>
+        [InitializeOnLoadMethod]
+        private static void RegisterSettingRestorers()
+        {
+            WorkflowSettingRestorerRegistry.Register("project.tags",
+                CaptureTags,
+                ApplyTags);
+        }
+
+        private static SerializedObject GetTagManager()
+        {
+            var assets = AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/TagManager.asset");
+            return (assets != null && assets.Length > 0) ? new SerializedObject(assets[0]) : null;
+        }
+
+        private static string CaptureTags()
+        {
+            var tagManager = GetTagManager();
+            var tagsProp = tagManager?.FindProperty("tags");
+            var tags = new List<string>();
+            if (tagsProp != null)
+            {
+                for (int i = 0; i < tagsProp.arraySize; i++)
+                    tags.Add(tagsProp.GetArrayElementAtIndex(i).stringValue);
+            }
+            return Newtonsoft.Json.JsonConvert.SerializeObject(tags);
+        }
+
+        private static bool ApplyTags(string json)
+        {
+            var tags = Newtonsoft.Json.JsonConvert.DeserializeObject<List<string>>(json) ?? new List<string>();
+            var tagManager = GetTagManager();
+            var tagsProp = tagManager?.FindProperty("tags");
+            if (tagsProp == null)
+                return false;
+
+            tagsProp.ClearArray();
+            for (int i = 0; i < tags.Count; i++)
+            {
+                tagsProp.InsertArrayElementAtIndex(i);
+                tagsProp.GetArrayElementAtIndex(i).stringValue = tags[i];
+            }
+            tagManager.ApplyModifiedProperties();
+            return true;
+        }
+
+        /// <summary>
         /// Enum representing different render pipelines
         /// </summary>
         public enum RenderPipelineType
@@ -158,7 +208,6 @@ namespace UnitySkills
             
             var availableShaders = new List<object>();
             
-            // List common shaders for the detected pipeline
             string[] shadersToCheck = pipeline switch
             {
                 RenderPipelineType.URP => new[] 
@@ -218,7 +267,6 @@ namespace UnitySkills
         {
             var shaderNames = new List<string>();
             
-            // Get all shader assets
             var guids = AssetDatabase.FindAssets("t:Shader");
             foreach (var guid in guids)
             {
@@ -233,7 +281,6 @@ namespace UnitySkills
                 }
             }
             
-            // Also try to find common built-in shaders
             var builtInShaders = new[]
             {
                 "Standard", "Standard (Specular setup)",
@@ -355,6 +402,10 @@ namespace UnitySkills
                 if (tagsProp.GetArrayElementAtIndex(i).stringValue == tagName)
                     return new { error = $"Tag '{tagName}' already exists" };
             }
+
+            if (WorkflowManager.IsRecording)
+                WorkflowManager.SnapshotSetting("project.tags", CaptureTags(), "Project: Tags");
+
             tagsProp.InsertArrayElementAtIndex(tagsProp.arraySize);
             tagsProp.GetArrayElementAtIndex(tagsProp.arraySize - 1).stringValue = tagName;
             tagManager.ApplyModifiedProperties();

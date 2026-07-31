@@ -8,7 +8,7 @@ namespace UnitySkills
 {
     /// <summary>
     /// AI Config Tab — one card per supported Agent (Claude Code / Codex /
-    /// Antigravity / Cursor) plus a Custom Agent card.
+    /// Antigravity / Cursor / OpenCode) plus a Custom Agent card.
     /// Cards are built dynamically so adding a new agent only requires one
     /// entry in _agentConfigs.
     /// </summary>
@@ -105,6 +105,15 @@ namespace UnitySkills
                     isGlobInstalled = () => SkillInstaller.IsCursorGlobalInstalled,
                     installFunc = SkillInstaller.InstallCursor,
                     uninstallFunc = SkillInstaller.UninstallCursor
+                },
+                new AgentConfig
+                {
+                    id = "opencode", brandClass = "brand-opencode",
+                    nameDisplay = "OpenCode",
+                    isProjInstalled = () => SkillInstaller.IsOpenCodeProjectInstalled,
+                    isGlobInstalled = () => SkillInstaller.IsOpenCodeGlobalInstalled,
+                    installFunc = SkillInstaller.InstallOpenCode,
+                    uninstallFunc = SkillInstaller.UninstallOpenCode
                 }
             };
         }

@@ -2,6 +2,158 @@
 
 All notable changes to **UnitySkills** will be documented in this file.
 
+## [2.4.3-beta.1] - 2026-07-31
+
+### Changed
+
+- **合并上游 beta** — 同步 `upstream/beta` 的 `2.4.2` 更新，包括工作流持久化与回滚增强、Unity CLI、Behavior / HybridCLR skills、OpenCode 支持、编辑器启动自启策略，以及配套文档和测试修复。
+- **版本号更新** — `SkillsLogger.Version` / `package.json` / Python helper `__version__` / `agent.md` / README 当前版本标记同步提升到 `2.4.3-beta.1`。
+
+## [2.4.2] - 2026-07-30
+
+> **接入面扩展 + 一条 agent 诱导链的根治** —— 新增 OpenCode 内建支持与"编辑器启动时自动启动服务器"开关（均来自社区 PR），并修掉 issue #52 暴露的一条系统性问题：文档里的两处裸名会诱导任何 agent 把 Python 客户端函数当成 REST skill 调用，而错误提示对这类误用给不出任何纠正方向，导致无限重试。无新增 skill，技能总数仍为 776。
+
+### Added
+
+- **OpenCode 内建支持（AI 配置面板第 5 个工具）** — 面板 AI Config 标签页新增 OpenCode 卡片，支持项目级 `.opencode/skills/unity-skills/` 与全局 `~/.config/opencode/skills/unity-skills/` 两种安装位置。沿用与 Claude Code / Codex / Antigravity / Cursor 完全相同的 `SkillInstaller.InstallSkill` 路径，不另写写入逻辑。OpenCode 的 skill 发现是纯目录约定（`{skill,skills}/**/SKILL.md`），无需在 `opencode.json` 注册任何内容，因此安装/卸载全程不读写用户的 OpenCode 配置文件，冲突面仅限 `unity-skills/` 这一个专属目录名。Windows 上 OpenCode 的全局配置目录同样是 `%USERPROFILE%\.config\opencode`（其 `xdg-basedir` 依赖无 Windows 分支，不走 `%APPDATA%`），与实现一致。感谢 [@ShutovKS](https://github.com/ShutovKS)（#50）。
+- **编辑器启动时自动启动服务器（opt-in）** — 设置抽屉 → 服务器 节新增「编辑器启动时运行」开关，默认关闭。此前 `-unityskills-coldstart` 只覆盖"AI 通过 Unity CLI 拉起编辑器"的场景，而人先手动开 Unity 再让 AI 接入时，`OnEditorQuitting` 会主动清掉 `ServerShouldRun`，因此每次都必须手点一次启动。新实现用独立偏好 + `SessionState` 一次性哨兵保证每个编辑器会话只尝试一次，并引入显式的 `AutoStartReason` 优先级（`CliColdStart` > `EditorLaunch` > `DomainReload`），把连续失败熔断计数正确限定在域重载语境内，不污染既有容错机制；手动停服后不会被再次拉起。需配合「编译后自动重启」使用。感谢 [@ShutovKS](https://github.com/ShutovKS)（#51）。
+
+### Fixed
+
+- **Python 客户端 helper 名被当作 skill 反复调用（issue #52）** — 报告者观察到 agent 对 `get_skill_schema` 连发 29 次并全部得到 `SKILL_NOT_FOUND`。`get_skill_schema` 是 `unity_skills.py` 的模块级函数（内部走 `GET /skills/schema`），从来不是 REST skill，服务端返回本身正确，但成因在项目侧且可复现：**(1)** 主 `SKILL.md` 全文 6 处提到 helper 函数，5 处都写作 `unity_skills.xxx()`，唯独介绍 schema 分层那段是裸名 `get_skill_schema()` —— 被误调的正是这一个；**(2)** 同文件的 SemiAuto 模块清单列了 27 个"skill 名"，与运行时注册的 776 个真名比对后只有 `scene_analyze` 与 `project_stack_detect` 存在，其余 25 个是幽灵名（含报告截图里排第二的 `health_check`，真名 `scene_health_check`）；**(3)** `ResolveSkillNotFound` 的兜底是编辑距离 ≤5 或子串包含，而 `get_skill_schema` 到最近 skill 名的距离是 10 且不是任何 skill 的子串，建议列表因此为空。第 (3) 条解释了 29 : 1 的调用比 —— `health_check` 因 `scene_health_check` 含其子串而拿到建议、一次即自纠，`get_skill_schema` 拿不到任何方向只能重试。现补齐 helper 前缀并写明"不是 skill 名、不要 POST 到 `/skill/<name>`"，25 个幽灵名换成运行时逐条核对过的真名，并在 `SkillRouter` 新增客户端 helper → REST 端点的定向纠正表（命中时直接给出 `GET /skills/schema` 等等价调用；`errorCode` 保持 `SKILL_NOT_FOUND` 不动契约，fuzzy 路径行为不变）。
+- **顶层 `SKILL.md` 从未被一致性测试覆盖** — `SkillDocumentationConsistencyTests.GetDocsRoot()` 只遍历 `skills/*/SKILL.md` 的子目录，顶层 `unity-skills~/SKILL.md` 零覆盖，上述 25 个幽灵名因此长期潜伏（而 `/skillcheck` 明确把"幽灵 Skill"列为唯一硬错误）。新增 3 个测试补上盲区：顶层文档里的 helper 名必须带 `unity_skills.` 前缀；形如 skill 名的 code-span 必须是已注册 skill 或显式登记在白名单里；`k_ClientHelperRestEquivalents` 的每个键必须是真实的 Python helper 且不与任何注册 skill 同名（防止拼错导致的静默失效）。已通过"故意破坏三处 → 三个测试全部变红 → 还原"验证测试并非空跑。
+- **CLI 把 helper 名静默发成注定失败的请求** — `python unity_skills.py <name>` 的位置参一律进 `call_skill()`，所以 `python unity_skills.py get_skill_schema` 会真的 POST 一次 `/skill/get_skill_schema`。现在发请求前先本地拦截并给出正确调法，名单由 `globals()` 自省生成而非硬编码，新增 helper 自动覆盖。
+- **测试程序集因 `internal` 枚举进 `public` 签名而整体编译失败** — 新增的 `ServerAutoStartTests` 把 `internal` 的 `AutoStartReason` 用作 `public` 测试方法的参数类型，触发 `CS0051`（参数类型可访问性低于方法）。`InternalsVisibleTo` 只让类型**可访问**，不提升其声明可访问性，因此整个 `UnitySkills.Tests.Editor` 程序集编译失败、Test Runner 一条都跑不了。现改为在方法体内比对 `ToString()`，签名只用 `string`，枚举保持 `internal`。
+- **editor-launch 自启路径的四处缺口** — **(1)** 补 batchmode 守卫：`unity test` / `run` / `build` 等无头流程同样执行 `[InitializeOnLoad]`，开关打开后会在无头进程里抢占 8090–8100 并向全局注册表广告一个转瞬即逝的实例，把客户端的多实例发现引到即将退出的进程上；**(2)** SafetyNet 覆盖新路径：其判据 `shouldRun && AutoStart` 在首次启动时恰好为 false（`ServerShouldRun` 在退出时被清），使 editor-launch 成为全项目唯一一条 `delayCall` 不触发就彻底失效的自启路径；**(3)** 熔断早退补 `CompletePendingAutoStart`：否则待处理的 editor-launch 意图会越过刚触发的熔断，在后续域重载里再次拉起服务器；**(4)** 静态构造器里的 `SessionState` 读取挪到 `delayCall` 注册之后：`PrefKey()` 会触发 `RegistryService` 的静态初始化，一旦抛异常会被外层 `catch` 吞掉并连带跳过域重载恢复的注册。
+- **自启失败日志丢失熔断计数** — 重构后的失败文案统一简化为 `Server auto-start failed (reason)`，域重载路径下用户看不出离 `MaxConsecutiveFailures` 上限还有多远。现域重载分支恢复 `consecutive failures: N/Max` 与"下次域重载重试"的原文案，EditorLaunch / CliColdStart 因每会话只尝试一次而沿用简版。
+- **OpenCode 流量在审计日志里归为 `Unknown`** — `_agentKeywords` 未登记 opencode，而 `"opencode"` 不含表中任何现有关键字（`codex` 需 c-o-d-e-x，`openai` 需 a-i），因此 OpenCode 直接用内建 fetch 或 curl 打 REST 的流量（不经 Python helper 发 `X-Agent-Id`）会落到 `Unknown(...)`，与其它 4 个工具不对等。
+
+### Changed
+
+- **`/analytics` 的「最慢技能」只统计成功调用** — 该表列为 `skill/avgMs/maxMs/calls` 且没有失败率列（只有上方「最常用」表有），于是 issue #52 里 29 次全部被拒的 `get_skill_schema` 显示成"调用 29 次、均时 24ms"，看起来像一个真被调用了 29 次的慢技能。被拒绝的请求（未知 skill、参数校验失败、权限门）从未进入 skill 方法体，其耗时计的是路由层，对性能诊断无意义。现 `SkillAgg` 分离成功态统计（`OkCalls` / `OkTotalMs` / `OkMaxMs`），`slowestSkills` 改用这三项且门槛为 `OkCalls >= 3`，节标题同步改为「最慢（>=3 次成功调用）」。「最常用」表不变，仍以 100% 失败率暴露这类问题。
+- **版本号更新** — `SkillsLogger.Version` / `package.json` / Python helper `__version__` / `agent.md` / README 当前版本标记同步提升到 `2.4.2`。
+
+## [2.4.1] - 2026-07-27
+
+> **2.4.0 真机验收修复** —— 在装齐 `com.unity.behavior` / NGO / HybridCLR 的 Unity 6000.3.9f1 工程上对 2.4.0 全部 36 个新 skill 做了一轮真机验收。功能均按文档生效，但暴露出两个 P0：装上 NGO 2.x 会让整个包编译失败，以及任何带工作流跟踪的 `.uxml` 写操作会把编辑器彻底卡死。本版修掉这两条及一批错误分类缺陷，无新增 skill，技能总数仍为 776。
+
+### Fixed
+
+- **装上 NGO 2.x 后整个包无法编译（P0）** — `NetcodeSkills.Version()` 把 `System.Version.TryParse(..., out var parsed)` 放在 `&&` 右侧，短路求值使 `parsed` 不满足 C# 的确定性赋值规则，触发 `CS0165: Use of unassigned local variable 'parsed'`。该分支位于 `#if NETCODE_GAMEOBJECTS` 内，只有装上 2.x 版 NGO（即 6 个 netcode 2.5 skill 的目标环境）才会参与编译，于是**一装包整个 `UnitySkills.Editor` 程序集编译失败、776 个 skill 全部不可用**。CI 编译矩阵不安装 NGO，因此该组合从未被覆盖。现改为显式声明 `System.Version parsed = null;`。
+- **`.uxml` 写操作导致编辑器无限卡死（P0）** — `WorkflowManager.CaptureObjectReferences` 用 `while (iterator.Next(true))` 做全深度 `SerializedProperty` 遍历，没有任何深度、节点数或时间预算。`.uxml` 导入出的 `VisualTreeAsset` 的序列化数据是一张 `[SerializeReference]` 托管引用**图**（含环与共享引用），`Next(true)` 会沿引用无限下降，主线程 100% CPU 且永不返回，只能强杀编辑器。由于 `SnapshotObject` 对**所有** `SnapshotType`（含 `Created`）都会调用它，任何 `TracksWorkflow=true` 的 uxml 写操作都会触发——包括 2.4.0 新增的 `uitk_runtime_binding_add` 以及既有的 `uitk_create_uxml` / `uitk_write_file` / `uitk_add_element` 等。现按 `managedReferenceId` 对托管引用去重（把引用图收敛回有限遍历，这是真正的环阻断），并另加 50000 节点 / 32 层深度 / 2000ms 三重兜底；触顶时记 verbose 日志并保留已采集的部分引用（属性路径逐条仍然有效，资源另有内容寻址文件备份兜底）。
+- **路由层错误分类会丢弃 skill 自带的诊断字段** — `SkillErrorResponse.Build()` 只透传 `errorCode` / `error` / `skill` / `suggestedFixes` / `relatedSkills` / `retryStrategy` 六个字段，skill 在错误对象上额外返回的内容被静默丢弃。实测 `hybridclr_generate_step` 明明返回了 `available`（全部合法步骤名）与 `hint`，客户端却只收到 `"Unknown step 'bogus'."`，而附带的 suggestedFix 还写着"读消息里的枚举"——消息里根本没有枚举；`behavior` 的 `package` / `docs` 同样被丢。现由 `SkillResultHelper` 收集非保留字段并经 `Build(extra:)` 原样透传，匿名类型 / 字典 / `JObject` 三种返回形态均支持，提取失败降级为原行为。
+- **枚举取值非法被误判为 `TARGET_NOT_FOUND`** — .NET 的枚举解析失败消息为 `Requested value 'X' was not found`，其中的 "not found" 会命中分类器的 not-found 规则，使"参数值不合法"被报成"目标对象不存在"，并附带 `gameobject_find` 建议，把调用方引向场景里去找一个根本不存在的对象。现新增在消息**开头**锚定的语义规则（`invalid` / `unknown` / `unsupported` / `malformed`），优先于 not-found 规则；仅匹配消息自身的判定词，不会被引号内嵌套的异常文本干扰。
+- **job 不存在时建议去找 GameObject** — `job_wait` / `job_status` 传入未知 jobId 时归为 `TARGET_NOT_FOUND`，落到默认分支后建议 `gameobject_find` / `scene_get_hierarchy`。现按消息识别 job 语境，改为建议 `job_list` / `job_status` 并说明 jobId 不跨域重载存活。
+- **域重载后首次查询包版本返回 `null`** — `PackageManagerHelper` 的包列表在每次域重载后异步重建，`GetInstalledVersion()` 在缓存落地前一律返回 `null`。而 `netcode_version` 在 `NETCODE_GAMEOBJECTS` 分支里把 `installed` 硬编码为 `true`，于是首次调用会返回 `installed:true` + `version:null` + `meetsMinimumFor25:null` 这种自相矛盾的结果，第二次才正常；`behavior_status` 同样受影响。现为 `IsPackageInstalled` / `GetInstalledVersion` 补同步兜底 `PackageInfo.FindForAssetPath("Packages/<id>")`，缓存未就绪时直接解析单个包。
+- **`netcode_attachable_add` 的 `autoDetach` 逗号组合会静默写入错误值** — NGO 把 `AttachableBehaviour.AutoDetachTypes` 标为 `[Flags]`，却让成员取隐式顺序值（`None=0, OnOwnershipChange=1, OnDespawn=2, OnAttachNodeDestroy=3`）而非 2 的幂，因此 `OnDespawn,OnOwnershipChange` 按位或得到 `3`，恰好等于**另一个无关成员** `OnAttachNodeDestroy`。上游缺陷，但本 skill 的报错信息此前主动宣传 "comma-separated to combine"，等于引导调用方写坏字段且无任何提示。现直接拒绝含逗号的取值并说明原因，同时在合法与非法两条路径上都返回 `available` 取值列表。
+- **备份 blob 损坏时 undo 只报 "Unknown failure"** — SHA1 校验失败会正确中止还原并把 blob 隔离为 `<hash>.corrupt`，但逐条明细里只有一句 "Unknown failure"，调用方无法区分"备份自身损坏"与其它任何失败——而这恰恰是最需要被明确告知的一种。现由 `WorkflowFileStore` 记录最近一次完整性失败原因，undo / redo 在无更具体错误时优先上报它。
+
+### Changed
+
+- **版本号更新** — `SkillsLogger.Version` / `package.json` / Python helper `__version__` / `agent.md` / README 当前版本标记同步提升到 `2.4.1`。
+
+## [2.4.0] - 2026-07-27
+
+> **全仓审计 + 内核加固** —— 一轮覆盖全仓的审计后修完全部 P0 内核缺陷，并对 HTTP 服务层、工作流备份、错误分类三条主链路做了架构深化；同时新增 `behavior` / `hybridclr` 两个模块与 14 个跨模块 skill。技能总数 740 → 776，功能模块 52 → 54，模块文档目录 74。
+
+### Added
+
+- **`behavior` 模块（+10 skills）** — 对接可选包 `com.unity.behavior` 的反射桥接层：`behavior_status`、`behavior_graph_create` / `behavior_graph_list` / `behavior_graph_info`、`behavior_agent_add` / `behavior_agent_get` / `behavior_agent_list` / `behavior_agent_set_graph`、`behavior_blackboard_list` / `behavior_blackboard_set`。成员名对照 `com.unity.behavior` 1.0.16 源码（needle-mirror）逐一核对，全程反射、**不链接**该程序集，未装包时返回带 `package_install` 指引的明确 error 而非编译失败。**节点拓扑编辑（连线/增删节点）明确不做** —— 该部分 API 未公开且序列化格式不稳定。
+- **`hybridclr` 模块（+12 skills）** — 对接 HybridCLR 热更新工具链：`hybridclr_install_status` / `hybridclr_status` / `hybridclr_validate_setup`、`hybridclr_settings_get` / `hybridclr_settings_set`、`hybridclr_generate_all` / `hybridclr_generate_step` / `hybridclr_aot_generic_refs`、`hybridclr_compile_dlls` / `hybridclr_copy_hotupdate_dlls` / `hybridclr_get_hotupdate_dlls` / `hybridclr_get_paths`。API 锚点对照 hybridclr_unity 8.12.0 的 Editor 源码（`SettingsUtil` / `HybridCLRSettings` / `Commands.*` / `InstallerController`），同样惰性反射解析 `HybridCLR.Editor` 程序集，从不静态链接。
+- **UI Toolkit +6 skills** — `uitk_runtime_binding_add` / `uitk_runtime_binding_list`（把运行时数据绑定直接写进 UXML 资产，可重复执行为原地更新）、`uitk_worldspace_panel_create` / `uitk_worldspace_panel_get`（世界空间面板，6000.5+ 用 `PanelRenderer`、6000.2–6000.4 用 `UIDocument`）、`uitk_element_reference_get`（列举 `authoring-id` 并解析嵌套模板路径）、`uitk_uxml_upgrade`（批量跑已注册的 UXML upgrader）。
+- **Netcode +6 skills** — `netcode_version`（报告 NGO 版本及 2.5+ 特性可用性）、`netcode_attachable_add` / `netcode_attachable_info` / `netcode_attachable_node_add`、`netcode_component_controller_add` / `netcode_component_controller_configure`，覆盖 NGO 2.5 的 AttachableBehaviour / AttachableNode / ComponentController。
+- **`editor_playmode_step` / `editor_playmode_inspect`（+2 skills）** — 前者以 `EditorApplication.Step` 逐帧推进 Play Mode（1–100 帧）；因每次 Step 要到后续 Editor tick 才确认（以 `Time.frameCount` 校验后才发下一次），实现为异步 job，用 `job_status` / `job_wait` 取 `framesCompleted` / `frameCount` / `isPaused`。后者读取 GameObject 的运行时实况（transform、activeSelf/activeInHierarchy、可选某个组件的公开字段与属性），Play/Edit 两种模式都可用，响应带 `isPlaying` / `isPaused` 供区分。两者配合可逐帧断言状态变化。
+- **截图 skill 新增 `returnImage` 参数** — `camera_screenshot` / `camera_sceneview_screenshot` / `scene_screenshot` 可选把 PNG 以 base64 随响应返回，供无文件系统访问的客户端（远程 / MCP）使用。**默认 `false`，既有行为完全不变**；`maxDimension` 默认 1280，超出 base64 体积上限时返回明确 error 并提示改小尺寸或改读文件——此时截图文件已正常落盘，只是内联负载失败。
+- **17 个内核集成测试（5 个新文件）** — `BatchExecutorTests`(4)、`SkillRouterExecuteEndToEndTests`(3)、`SkillRouterFilterCacheTests`(3)、`SkillsModeManagerOneShotTests`(3)、`WorkflowBackupResilienceTests`(4)，覆盖批量执行、路由端到端、过滤缓存、one-shot 授权、工作流备份韧性。
+- **两个 CI 检查脚本** — `.github/scripts/check_skill_frontmatter.py` 校验 SKILL.md frontmatter 结构与 description 长度（v2.3.0 曾因超限 skill 被发现器拒载而翻车）、`check_meta_files.py` 校验 `.cs`/`.uxml`/`.uss` 的 `.meta` 配对与 GUID 唯一性；编译矩阵新增对应 job，并为各 Unity 版本加上 Library 缓存。
+
+### Changed
+
+- **`/health` 改为 HTTP 线程快路径** — 此前 `/health` 也要排进主线程队列，Unity 一忙就连"服务器是否活着"都探不出来。现在由 HTTP 线程直接读一份 volatile 快照应答，并新增 `mainThreadIdleMs` 心跳字段区分「Unity 忙」与「服务器死」，以及 `workflowRecoveryMode` 字段暴露工作流历史是否处于恢复模式。首次全量刷新落地前快路径主动让位、回退到原有路径。
+- **主线程队列拆分为 light / heavy 双通道** — 执行 skill、构建反射缓存、写盘一律归 heavy 通道（含 analytics / recommend），轻量查询走 light 通道不再被堵。heavy 通道每帧双闸门：最多 `MaxHeavyJobsPerFrame = 20` 个 job，且帧预算 `HeavyFrameBudgetSeconds = 0.012`；批量分块处理另加 `ChunkTimeBudgetMs = 12.0` 的时间预算（与 chunkSize 双闸门，且保证每帧至少推进一项，不会饿死）。
+- **schema 响应加 gzip 与 ETag/304** — 大响应（`~143KB` 的 summary、`~618KB` 的完整 schema）在 HTTP 线程按 ETag 缓存压缩结果，小于 `GzipMinBytes = 4096` 或压不小的内容原样返回；ETag/304 补齐到慢路径，重复取 schema 不再重传全量。
+- **路由层统一错误分类（`SkillErrorClassifier`）** — 在 SkillRouter 出口按错误上下文统一补 `errorCode` / `retryStrategy`：skill 已显式声明的透传不覆盖，未声明的由分类器推断，`TARGET_NOT_FOUND` / `MISSING_PACKAGE` 等此前预留的枚举真正启用。客户端因此能对"找不到目标"和"包没装"做出不同处置，而不是统一按未知错误处理。
+- **README 新增「Built for Trust: The Governance Layer」章节与横向对比表** — 把散落各处的治理机制收拢成调用生命周期上的四道：执行前 `?mode=dryRun` / `?mode=plan` 预演、执行时三档模式 + 每个 skill 的风险元数据 + 按 skill 的 Allowlist、执行后 JSONL 审计留痕、出错后类型化工作流回滚。附与「典型 MCP bridge」「Unity 官方 AI Assistant」在权限粒度 / 审计 / 回滚粒度 / 执行前预演 / 批量事务五个维度上的对比表；表下明确声明：UnitySkills 一列的机制均可对照源码或直接调用端点验证，另两列来自 2026-07 的公开材料调研，描述的是一类工具而非特定项目，且可能已发生变化。`docs/SETUP_GUIDE.md` / `SETUP_GUIDE_CN.md` 各加一行交叉引用指向该节。
+- **技能标注补齐与修正** — 24 个模块补齐 `RiskLevel`（`.cs` 内 +52 处，另 7 处既有值改写），12 个模块补齐 `TracksWorkflow=true`（+29 处，另 12 处改写），并修正 3 处把实际会写入的 skill 误标为 `SemiAuto` 的问题。缺 `TracksWorkflow` 意味着快照代码存在却从不触发——这些操作此前实际上不可撤销。
+- **`uitk_uxml_upgrade` 改为反射绑定 `UxmlUpgradeService`** — 该 API 虽被 Unity 6.3 的 ScriptReference 收录，但**并非每个 6000.3 构建都随附**（6000.3.9f1 就没有），编译期硬引用会直接让整个包编译失败。现按反射绑定：类型在就正常执行，不在则返回带 `requiredUnityVersion` / `currentUnityVersion` 的 `SEMANTIC_INVALID` 拒绝。文档同步订正——处在 6000.3+ 不等于该调用可用。
+- **计数同步** — `agent.md` / README / 主 `SKILL.md` 快照行统一为 776 skills / 54 模块 / 74 文档目录（主 SKILL.md 此前滞后在 738）。
+- **版本号更新** — `SkillsLogger.Version` / `package.json` / Python helper `__version__` / `agent.md` / README 当前版本标记同步提升到 `2.4.0`。
+
+### Fixed
+
+- **工作流 blob 垃圾回收会误删仍在使用的备份（P0）** — 引用扫描漏掉了 `_currentTask`（正在进行、尚未落历史的任务），其备份可能在任务中途被回收，导致该任务无法撤销。现补入引用集，并加 `RecentWriteGrace = 10 分钟` 宽限期兜住刚写入尚未登记的 blob。
+- **损坏的 blob 会被当作有效备份还原（P0）** — 新增 `VerifyBlobIntegrity`（SHA1 校验），还原前先验；不匹配的 blob 改名为 `<hash>.corrupt` 隔离，且清理逻辑不再回收隔离文件（它们是损坏的证据）。校验在写入任何东西之前完成，损坏 blob 不会污染项目。
+- **工作流历史文件损坏后整段历史丢失（P0）** — 写入改为原子替换并保留 `.bak`，加载失败时回退到 `.bak`；仍不可用则进入历史恢复模式（`IsHistoryRecoveryMode`，经 `/health` 的 `workflowRecoveryMode` 暴露），而不是静默丢弃全部历史。
+- **grant 令牌泄漏且长期有效（P0）** — 令牌改为 `finally` 清除，并加 TTL（`DefaultGrantTtlSeconds = 300`，最多 256 个存活，读取 pending 列表时惰性清扫过期项）；pending 槽位统一在 `finally` 释放，异常路径不再永久占位。
+- **`job_wait` 会冻结编辑器存活探测（P0）** — 超时统一 clamp 到 `MaxWaitTimeoutMs = 2000`；对 `EngineDrivenJobKinds`（需引擎推进才能前进的 job，阻塞等待反而适得其反）立即返回当前状态，由调用方轮询。
+- **审计日志写入（P0）** — 主线程预热所需解析，避免工作线程上触发跨线程调用；落盘改用 `File.Replace` 原子交换，进程中断不再产生半截日志。
+- **Python helper 从不遵守服务端的重试指示** — 服务端的暂时性不可用（编译中 / 限流 / 队列满 / 服务已停）是以 HTTP 200 + 结构化错误体返回的，带 `retryStrategy: "wait_and_retry"` 和 `retryAfterSeconds`；而客户端旧的重试判定只看传输层异常（`_is_retryable_transport_error()`），这类响应根本不在它视野内，于是被当作终局错误直接抛给调用方。新增 `_structured_retry_after()`：命中 `_RETRYABLE_ERROR_CODES`（`COMPILING` / `RATE_LIMIT` / `QUEUE_FULL` / `SERVER_STOPPED`）、`retryStrategy == "wait_and_retry"` 或 HTTP 429/503 即重试，等待时长优先用服务端给的 `retryAfterSeconds`（缺失取 2s，上限 15s）；HTTP 429/503 即使 `errorCode` 不认识也照样重试，日后服务端在同一状态码下新增暂时性错误码无需同步升级客户端。重试次数耗尽时原样返回服务端最后一次的响应体，而不是合成一个假错误。同时抽出 `_post_skill_with_retries()` / `_timeout_error_result()` / `_connection_error_result()` / `_mode_result_from_outcome()`，`call` / `dry_run_skill` / `plan_skill` 三条路径共用同一套重试与错误构造逻辑。
+- **YooAsset 7 个 collector skill 与 `validate_cleanup_empty_folders` 缺快照** — 这些会改动项目配置/删除文件夹的操作此前不进工作流历史，因而不可撤销；现已补齐快照。
+
+## [2.3.0] - 2026-07-26
+
+> **Unity CLI 集成** —— 接入官方 `unity` 命令行工具，让 AI 在 Unity 编辑器**关闭**时也能冷启动项目、传参启动、跑无头测试/构建。全程以用户在面板显式绑定为前提，未绑定即完全不生效。Advisory 模块 23 → 24。
+
+### Added
+
+- **Unity CLI 配置面板（`UnityCliWindow`）** — `Window ▸ UnitySkills → AI Config → Unity CLI Setup…` 二级面板：检测本机 `unity` 可执行文件、绑定当前项目、按特性粒度开关。绑定信息写入 `Library/UnitySkills/cli_config.json`（`schemaVersion` 1），**这是 AI 侧唯一的授权凭据**——文件缺失或 `enabled:false` 即视为该项目未开启 CLI。检测走后台线程 + 轮询收结果，遵守零跨线程调用 Unity API 的约束。
+- **五个特性开关** — `coldStart`（冷启动/生命周期）、`openArgs`（`unity open --args` 传参启动）、`cliTest`（`unity test` 无头测试）默认开启；`cliRun`（`unity run` 批处理运行）、`cliBuild`（`unity build` 无头构建）默认**关闭**，旧配置缺键即为 `false`，必须在面板显式开启。
+- **`UnityCliService`** — CLI 探测、项目绑定/解绑、特性读写、冷启动标记消费与注册表同步的服务层。
+- **冷启动标记 `-unityskills-coldstart`** — 以 `unity open <project> --args -unityskills-coldstart` 启动时，本会话强制拉起 REST 服务器，无视用户的 Auto-start 偏好；标记每个编辑器会话只消费一次，不会覆盖中途的手动停止，后续 Domain Reload 仍走常规恢复路径。
+- **`unity-cli` Advisory 模块（+1 文档）** — 纯指导文档、无 REST Skill，按五个特性开关分节：冷启动与存活探测的三步分诊（先查注册表 pid，`unity status` 仅作补充证据——无 Pipeline 包的运行中编辑器不会出现在其输出里）、`--args` 传参、无头测试、批处理运行、无头构建，并给出各自与 REST skill 的路由规则（交互式迭代走 REST，全量/编辑器关闭时走 CLI）。附一组明确的 DO NOT：不自行安装 CLI、不裸跑 `unity mcp`（会阻塞 shell 等待 MCP 客户端）、不解析人类可读输出（须 `--format json --non-interactive`）、不走 `unity command` / `unity pipeline` 路线（与 REST 能力重复）。
+- **Python helper `get_cli_config()` / `wait_for_health()`** — 前者读取并校验绑定配置（未绑定或 `enabled:false` 一律返回 `None`，调用方单点判断即可），并以实际发现配置的目录纠正 bind-time 快照的 `projectPath`，避免项目移动后指向错误路径；后者在冷启动后每次重试都重置缓存客户端以重跑端口发现（8090-8100），默认超时 600s 以覆盖首次导入/编译。
+- **注册表新增 `cliBound` / `cliPath` 字段** — `~/.unity_skills/registry.json` 供 AI 客户端跨项目发现"可冷启动"的实例；**仅用于存活判断，不作为授权依据**，授权只认项目自己的 `cli_config.json`。
+- **快捷键命令 `UnitySkills/Open Unity CLI Setup`** — 可在 Edit ▸ Shortcuts 中自定义绑定。
+
+### Changed
+
+- **审计日志窗口跟随语言实时重建** — 主面板切换语言时 `UnitySkillsAuditWindow` 整树重建（含窗口标题），不再需要重开窗口才能生效。
+- **审计日志窗口改用统一主题变量** — `AuditLogWindow.uss` 移除全部硬编码色值，改用主窗口 USS 的 `--color-*` 变量（C# 侧先加载主 USS 再加载本窗口 USS），与 `UnityCliWindow` 保持同一套视觉语言；徽章统一为描边胶囊，色彩只表语义。
+- **设置抽屉新增 Unity CLI 分组** — 展示当前绑定状态并提供进入配置面板的入口，打开抽屉与切换语言时刷新。
+- **全量清理代码注释** — 对 `Editor/`、`Tests/`、`unity-skills~/scripts/` 下 135 个 C#/Python 文件做了一次注释精简：删除复述下一行代码的注释、版本历史痕迹（`// --- NEW SKILLS (v1.5/CM3) ---`、`/// Now supports…`、分节标题里的 `(v1.9)` 等）、重构后遗留的过时文档与无信息量占位注释；保留解释"为什么"的设计约束、公共 API 的 XML 文档、分节导航注释与文件末尾作者标注。改动经代码指纹校验（剥离注释与空白后比对 SHA-256），确认未触及任何一行实际代码。
+- **README advisory 模块计数订正** — 中英文 README 的 advisory 模块数由 23 更新为 24、模块文档总数由 71 更新为 72，与 `agent.md` 口径对齐。
+- **版本号更新** — `SkillsLogger.Version` / `package.json` / Python helper `__version__` / `agent.md` / README 当前版本标记同步提升到 `2.3.0`。
+
+### Fixed
+
+- **v2.3.0 发布检查修复** — `unity-cli` 的 `SKILL.md` 补齐 `## Exact Signatures` schema-first 声明（指向 `GET /skills/schema` / `unity_skills.get_skill_schema()`），修复 `SkillDocumentationConsistencyTests` 校验失败；`AuditLogWindow.uss` / `UnityCliWindow.uss` 移除 `-unity-font-style: bold` 触发的引擎合成粗体，改用字体自身字重，并将 `UnityCliWindow.uss` 补入 `UISkillsFontTests` 的检查名单；用 2022.3 编辑器重新烘焙内置 CJK 字体图集，补齐本版本新增 UI 文案的缺失字符。
+
+## [2.2.1] - 2026-07-20
+
+> **工作流核心重构（issue #49）** —— 修复大工作流下的性能崩溃，重做快照/撤销体系，并让设置类操作真正可回退。技能总数 738 → 740（运行时口径）。
+
+### Added
+
+- **`workflow_clear_history`（+1 skill）** — 永久清空全部工作流历史：所有任务、redo（已撤销）栈、以及内容寻址文件存储中的全部文件备份。标 `SkillOperation.Delete` + `RiskLevel=high`（受审批模式门控，`NeverInSemi`），返回 before/after 统计。**仅删除跟踪历史，不会撤销任何已应用到项目资产/场景/设置的修改。**
+- **`asset_create_folder_batch`（+1 skill）** — 批量创建文件夹（`BatchExecutor` 范式），参数 `items` 为 JSON 数组 `[{folderPath}]`。
+- **分级快照（`SnapshotType`）** — Created（新建资产/文件夹，只存路径/GUID）、Moved（`asset_move`，只存新旧路径，undo=移回）、Deleted（文件+`.meta` 移入内容寻址 store，undo 可完整恢复，**含 `.cs` 脚本**——旧实现无法恢复 `.cs`）、Modified（材质/SO/场景/uss/uxml/shadergraph 等，内容寻址备份 + 轻量 originalJson）、Setting（经 `WorkflowSettingRestorerRegistry` 恢复）。
+- **内容寻址文件存储** — 工作流历史 `workflow_history.json` 不再内嵌资产 base64，改为内容寻址文件存储 `Library/UnitySkills/workflow_files/<sha1>`，历史 JSON 只存 `fileHash` 引用（`schemaVersion` 2→3，旧历史兼容读取）。
+- **自动清理 `WorkflowAutoCleanConfig`**（EditorPrefs `UnitySkills.Workflow.*`）— 默认 MaxTasks=200 / MaxHistoryMB=32 / MaxTaskAgeDays=30 / MaxStoreMB=512 / StoreMaxAgeDays=7；在 `EndTask` 和 `LoadHistory` 后自动 trim。
+
+### Changed
+
+- **版本号更新** — `SkillsLogger.Version` / `package.json` / Python helper `__version__` / `agent.md` / README 当前版本标记同步提升到 `2.2.1`。
+- **设置类 skill 现在真实可回退** — `console_set_pause_on_error` / `console_set_collapse` / `console_set_clear_on_play`、`debug_set_defines`、`graphics_set_quality_level` / `graphics_set_default_render_pipeline` / `graphics_set_quality_render_pipeline` / `graphics_add_always_included_shader` / `graphics_remove_always_included_shader` / `graphics_set_shader_stripping`、`physics_set_gravity` / `physics_set_layer_collision`、`project_add_tag`。
+- **CinemachineSkills 的 28 个写操作 skill 补齐 `TracksWorkflow=true`**（原本快照代码存在但从不自动触发）；`cinemachine_set_brain` / `cinemachine_set_blend` 补上缺失的 `WorkflowManager.SnapshotObject(brain.gameObject)` 快照（此前只 `Undo.RecordObject`，自动任务下不可回退），合计 30 个。
+- **`uitk_write_file` 新建文件现在可回退** — 新建 `.uss`/`.uxml` 时记录 Created 快照（undo=删除、redo=重建）；此前只有覆盖已存在文件的分支会备份。
+- **`scene_save` / `scene_create` 现在可回滚** — `scene_save` 覆盖已存在场景时把旧文件作为 Modified 快照备份。
+- **undo/redo 返回逐快照明细**（`TaskUndoResult`：total/succeeded/failed/details/error），失败不再静默。
+
+### Fixed
+
+- **issue #49 后续审查修复** — 工作流 schema 升至 4，主文件与 `.meta` 独立内容寻址；自动清理保护仍被历史引用的 blob 并修正 `0=不限制`；补全非空目录、脚本/Shader/UITK/SO、场景 GameObject/Component 删除恢复；undo/redo 按逆序执行且部分失败保留可重试项；Router 业务失败不再提交历史；Cinemachine 快照改为实际组件；旧 base64 历史原子迁移。
+
+- **大工作流性能崩溃（issue #49 核心）** — 删除自动任务的重复 `SaveHistory`（SkillRouter 每个自动任务原本保存两次）；删除 `SnapshotObject` 每 10 个快照的周期性全量保存；手动 workflow 期间加 dirty 检查（无新快照不保存）；移除语义错误的 `Undo.postprocessModifications` 被动捕获。
+- **redo 对 Created / Moved 快照失败** — `RedoDeletedSnapshot` / `RedoMovedSnapshot` / `RedoCreatedSnapshot`（资产分支）原本按“重新执行原操作”实现，与 undo 压入 redo 栈的反向快照方向不符（如 undo 建文件夹后 redo 要求文件夹仍存在），导致 redo 返回 “Unknown failure”。改为复用对应的 undo 逻辑（Created/Moved/Deleted 的 redo 与 undo 互为镜像），redo 现对全部快照类型正常，多次 undo/redo 往返稳定。
+- **`asset_create_folder` 父目录不存在时假报成功** — `AssetDatabase.CreateFolder` 失败时返回空 guid 并自行抛一条 console error，但旧代码不检查返回值，仍返回 `success=true` 并对未创建的文件夹记录工作流快照。现检查空 guid 并返回明确 error（与 `asset_create_folder_batch` 行为对齐），不再假报成功、不再记录无效快照。
+- **失败/无变更的自动任务污染工作流历史** — `WorkflowManager.EndTask` 原本无条件把当前 task 加入历史，导致 `TracksWorkflow=true` 的 skill 即使失败或无快照也留下一个 `changes=0` 的空任务（`EndTask` 注释描述的“仅记录有意义任务”从未真正实现）。现跳过零快照 task，历史更干净、undo/redo 导航不再被空条目干扰。
+
+### Known Limitations
+
+- `scene_save` 的 undo 恢复磁盘 `.unity` 文件，打开中的场景需手动 Reload Scene 才生效。
+- 未保存过的场景中新建的对象，`GlobalObjectId` 跨编辑器重启会失效，undo 会在明细中标记为失败。
+- 外部副作用（Package Manager 等）无法回滚。
+
 ## [2.2.1-beta.1] - 2026-07-19
 
 ### Changed

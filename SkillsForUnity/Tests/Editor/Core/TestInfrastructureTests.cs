@@ -26,7 +26,17 @@ namespace UnitySkills.Tests.Core
                 ["skippedTests"] = 4,
                 ["inconclusiveTests"] = 1,
                 ["otherTests"] = 1,
-                ["failedTestNames"] = new List<string> { "Sample.FailedTest" }
+                ["failedTestNames"] = new List<string> { "Sample.FailedTest" },
+                ["failedTestDetails"] = new List<object>
+                {
+                    new Dictionary<string, object>
+                    {
+                        ["name"] = "Sample.FailedTest",
+                        ["resultState"] = "Failed",
+                        ["message"] = "Expected true but was false",
+                        ["stackTrace"] = "at Sample.FailedTest()"
+                    }
+                }
             });
 
             try
@@ -39,6 +49,8 @@ namespace UnitySkills.Tests.Core
                 Assert.That(json["inconclusiveTests"]?.Value<int>(), Is.EqualTo(1));
                 Assert.That(json["otherTests"]?.Value<int>(), Is.EqualTo(1));
                 Assert.That(json["failedTestNames"]?[0]?.ToString(), Is.EqualTo("Sample.FailedTest"));
+                Assert.That(json["failedTestDetails"]?[0]?["message"]?.ToString(),
+                    Is.EqualTo("Expected true but was false"));
             }
             finally
             {
@@ -83,7 +95,6 @@ namespace UnitySkills.Tests.Core
         {
             const string testFolder = "Assets/Temp/RealValidation";
 
-            // 确保临时目录存在
             if (!AssetDatabase.IsValidFolder(testFolder))
             {
                 var parentFolder = "Assets/Temp";
@@ -114,13 +125,11 @@ namespace UnitySkills.Tests.Core
             {
                 BatchPersistence.RemoveJob(jobId);
 
-                // 清理临时目录
                 if (AssetDatabase.IsValidFolder(testFolder))
                 {
                     AssetDatabase.DeleteAsset(testFolder);
                 }
 
-                // 如果 Temp 父目录为空，也删除
                 if (AssetDatabase.IsValidFolder("Assets/Temp"))
                 {
                     var subFolders = AssetDatabase.GetSubFolders("Assets/Temp");

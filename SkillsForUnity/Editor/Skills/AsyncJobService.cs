@@ -42,17 +42,77 @@ namespace UnitySkills
         private static readonly Dictionary<string, SmokeRuntimeContext> SmokeRuntimeJobs =
             new Dictionary<string, SmokeRuntimeContext>(StringComparer.OrdinalIgnoreCase);
 
+        /// <summary>
+        /// Job kinds whose progress is driven by Unity's own main-thread event loop
+        /// (compilation daemon + domain reload, PackageManager async Request polling,
+        /// TestRunner callbacks, PlayMode state machine, BuildPipeline). <see cref="Wait"/>
+        /// runs on that same main thread, so spin-waiting on these kinds would block the
+        /// very loop they need in order to advance and would never observe progress.
+        /// </summary>
+        private static readonly HashSet<string> EngineDrivenJobKinds = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "compile", "package", "test", "playmode", "play_capture", "build_player", "playmode_step"
+        };
+
+        /// <summary>Hard ceiling for <see cref="Wait"/>'s blocking loop; longer waits must poll instead.</summary>
+        internal const int MaxWaitTimeoutMs = 2000;
+
         static AsyncJobService()
         {
             try
             {
                 BatchPersistence.EnsureLoaded();
+                RecoverTestCallbacksAfterReload();
                 EditorApplication.update += ProcessJobs;
             }
             catch (Exception ex)
             {
                 Debug.LogError("[UnitySkills] AsyncJobService init failed: " + ex);
             }
+        }
+
+        private static void RecoverTestCallbacksAfterReload()
+        {
+            var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            foreach (var job in BatchPersistence.ListJobs(100))
+            {
+                if (job == null ||
+                    !string.Equals(job.kind, "test", StringComparison.OrdinalIgnoreCase) ||
+                    !string.Equals(job.status, "reconnecting", StringComparison.OrdinalIgnoreCase) ||
+                    string.IsNullOrWhiteSpace(GetMetadataString(job, "runnerJobId")))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    RegisterTestCallbacks(job);
+                    job.metadata["reconnectStartedAt"] = now;
+                    Transition(job, "running", "reconnected", 10,
+                        $"Reconnected to {GetMetadataString(job, "testMode", "EditMode")} tests after domain reload.",
+                        "test_recovery");
+                    BatchPersistence.FlushIfDirty();
+                }
+                catch (Exception ex)
+                {
+                    FailJob(job.jobId, $"Failed to reconnect test callbacks: {ex.Message}", "failed_reconnect");
+                }
+            }
+        }
+
+        private static void RegisterTestCallbacks(BatchJobRecord job)
+        {
+            if (job == null || TestRuntimeJobs.ContainsKey(job.jobId))
+                return;
+
+            var api = ScriptableObject.CreateInstance<TestRunnerApi>();
+            var callbacks = new TestCallbacks(job.jobId);
+            api.RegisterCallbacks(callbacks);
+            TestRuntimeJobs[job.jobId] = new TestRuntimeContext
+            {
+                Api = api,
+                Callbacks = callbacks
+            };
         }
 
         internal static BatchJobRecord CreateJob(
@@ -208,7 +268,8 @@ namespace UnitySkills
                     ["skippedTests"] = 0,
                     ["inconclusiveTests"] = 0,
                     ["otherTests"] = 0,
-                    ["failedTestNames"] = new List<string>()
+                    ["failedTestNames"] = new List<string>(),
+                    ["failedTestDetails"] = new List<object>()
                 });
 
             var mode = string.Equals(testMode, "PlayMode", StringComparison.OrdinalIgnoreCase)
@@ -250,6 +311,7 @@ namespace UnitySkills
             {
                 job.metadata["runnerJobId"] = runnerJobId;
                 BatchPersistence.UpsertJob(job);
+                BatchPersistence.FlushIfDirty();
             }
             return true;
         }
@@ -308,10 +370,13 @@ namespace UnitySkills
                 return filterObj;
             }
 
-            filterObj.testNames = new[] { filter };
+            filterObj.groupNames = new[]
+            {
+                $@"(^|\.){System.Text.RegularExpressions.Regex.Escape(filter)}($|\.)"
+            };
             jobForWarnings?.warnings.Add(
                 $"Test filter '{filter}' did not match any cached Unity Test Runner discovery result. " +
-                "Falling back to raw filter as testName — may match across multiple assemblies. " +
+                "Falling back to an escaped group-name filter. " +
                 "Run test_discover_start first to ensure accurate filtering.");
             return filterObj;
         }
@@ -440,10 +505,30 @@ namespace UnitySkills
             return job;
         }
 
-        internal static BatchJobRecord Wait(string jobId, int timeoutMs)
+        /// <summary>
+        /// Blocks the calling (main) thread pumping <paramref name="jobId"/> until it reaches
+        /// a terminal state or <paramref name="timeoutMs"/> (clamped to <see cref="MaxWaitTimeoutMs"/>)
+        /// elapses. For <see cref="EngineDrivenJobKinds"/>, blocking cannot help the job progress
+        /// (it would just freeze the Editor for the full timeout), so this pumps once and returns
+        /// the current snapshot immediately with <paramref name="waitNotSupported"/> set.
+        /// </summary>
+        internal static BatchJobRecord Wait(string jobId, int timeoutMs, out bool waitNotSupported)
         {
-            var deadline = DateTime.UtcNow.AddMilliseconds(Math.Max(100, timeoutMs));
-            BatchJobRecord job;
+            waitNotSupported = false;
+            var job = BatchPersistence.GetJob(jobId);
+            if (job == null)
+                return null;
+
+            if (EngineDrivenJobKinds.Contains(job.kind ?? string.Empty))
+            {
+                waitNotSupported = true;
+                Pump(jobId);
+                BatchJobService.Pump(jobId);
+                return BatchPersistence.GetJob(jobId);
+            }
+
+            var clampedTimeoutMs = Mathf.Clamp(timeoutMs, 0, MaxWaitTimeoutMs);
+            var deadline = DateTime.UtcNow.AddMilliseconds(clampedTimeoutMs);
             do
             {
                 Pump(jobId);
@@ -728,8 +813,10 @@ namespace UnitySkills
         {
             if (TestRuntimeJobs.ContainsKey(job.jobId))
             {
+                var runtime = TestRuntimeJobs[job.jobId];
+                var reconnectStartedAt = GetMetadataLong(job, "reconnectStartedAt", 0);
                 var runnerJobId = GetMetadataString(job, "runnerJobId");
-                if (TryGetInternalTestRunnerState(runnerJobId, out var runnerState))
+                if (TryGetInternalTestRunnerState(runnerJobId, out var runnerState) && runnerState.IsRunning)
                 {
                     var stage = MapInternalTestRunnerStage(runnerState.TaskIndex);
                     var summary = BuildInternalTestRunnerSummary(stage, runnerState.TaskIndex);
@@ -751,6 +838,16 @@ namespace UnitySkills
                     return;
                 }
 
+                if (!runtime.Callbacks.HasAcceptedRun &&
+                    reconnectStartedAt > 0 &&
+                    DateTimeOffset.UtcNow.ToUnixTimeSeconds() - reconnectStartedAt > 30)
+                {
+                    FailJob(job.jobId,
+                        $"The original Unity Test Runner job '{runnerJobId}' was not restored after domain reload.",
+                        "failed_runner_not_restored");
+                    CleanupTestRuntime(job.jobId);
+                }
+
                 if (job.status == "running" &&
                     string.Equals(job.currentStage, "starting", StringComparison.OrdinalIgnoreCase) &&
                     DateTimeOffset.UtcNow.ToUnixTimeSeconds() - job.updatedAt > TestStartTimeoutSeconds)
@@ -764,41 +861,42 @@ namespace UnitySkills
             if (job.status == "reconnecting")
             {
                 var testMode = GetMetadataString(job, "testMode", "EditMode");
-                var elapsed = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - job.startedAt;
-
-                // PlayMode tests cannot recover after Domain Reload (Unity limitation)
-                // Also fail if more than 5 minutes have elapsed
-                if (string.Equals(testMode, "PlayMode", StringComparison.OrdinalIgnoreCase) || elapsed > 300)
+                var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                var reconnectStartedAt = GetMetadataLong(job, "reconnectStartedAt", 0);
+                if (reconnectStartedAt <= 0)
                 {
+                    reconnectStartedAt = now;
+                    job.metadata["reconnectStartedAt"] = reconnectStartedAt;
+                    BatchPersistence.UpsertJob(job);
+                    BatchPersistence.FlushIfDirty();
+                }
+
+                var runnerJobId = GetMetadataString(job, "runnerJobId");
+                if (!TryGetInternalTestRunnerState(runnerJobId, out var runnerState) || !runnerState.IsRunning)
+                {
+                    if (now - reconnectStartedAt <= 30)
+                    {
+                        Transition(job, "reconnecting", "waiting_test_runner", 10,
+                            "Waiting for Unity Test Framework to resume the original test run.", "test_recovery_wait");
+                        return;
+                    }
+
                     FailJob(job.jobId,
-                        $"Test run ({testMode}) cannot recover after domain reload.",
-                        "failed_reload_unrecoverable");
+                        $"The original Unity Test Runner job '{runnerJobId}' was not restored after domain reload. " +
+                        $"The {testMode} run was not restarted to avoid executing tests twice.",
+                        "failed_runner_not_restored");
                     return;
                 }
 
-                // EditMode tests: attempt to restart
                 try
                 {
-                    var filter = GetMetadataString(job, "filter");
-                    var api = ScriptableObject.CreateInstance<TestRunnerApi>();
-                    var callbacks = new TestCallbacks(job.jobId);
-                    api.RegisterCallbacks(callbacks);
+                    RegisterTestCallbacks(job);
 
-                    var filterObj = BuildTestFilter(testMode, filter, TestMode.EditMode, job);
-
-                    TestRuntimeJobs[job.jobId] = new TestRuntimeContext
-                    {
-                        Api = api,
-                        Callbacks = callbacks
-                    };
-
-                    Transition(job, "running", "restarting", 10,
-                        "Restarting EditMode tests after domain reload.", "test_recovery");
-
-                    api.Execute(new ExecutionSettings
-                    {
-                        filters = new[] { filterObj }
-                    });
+                    // Test Framework resumes its persisted TestJobData. Its global callbacks do
+                    // not survive reload, so bind a fresh callback to that same active runner.
+                    Transition(job, "running", "reconnected", 10,
+                        $"Reconnected to {testMode} tests after domain reload.", "test_recovery");
+                    BatchPersistence.FlushIfDirty();
                 }
                 catch (Exception ex)
                 {
@@ -1266,6 +1364,18 @@ namespace UnitySkills
             return int.TryParse(value.ToString(), out var parsed) ? parsed : defaultValue;
         }
 
+        private static long GetMetadataLong(BatchJobRecord job, string key, long defaultValue)
+        {
+            if (job?.metadata == null || !job.metadata.TryGetValue(key, out var value) || value == null)
+                return defaultValue;
+
+            if (value is long longValue)
+                return longValue;
+            if (value is int intValue)
+                return intValue;
+            return long.TryParse(value.ToString(), out var parsed) ? parsed : defaultValue;
+        }
+
         private static bool GetMetadataBool(BatchJobRecord job, string key, bool defaultValue)
         {
             if (job?.metadata == null || !job.metadata.TryGetValue(key, out var value) || value == null)
@@ -1328,9 +1438,10 @@ namespace UnitySkills
             return "Test run completed: " + string.Join(", ", segments) + ".";
         }
 
-        private sealed class TestCallbacks : ICallbacks
+        private sealed class TestCallbacks : IErrorCallbacks
         {
             private readonly string _jobId;
+            private bool _acceptedRun;
             private int _passedTests;
             private int _failedTests;
             private int _skippedTests;
@@ -1342,19 +1453,30 @@ namespace UnitySkills
                 _jobId = jobId;
             }
 
+            public bool HasAcceptedRun => _acceptedRun;
+
             public void RunStarted(ITestAdaptor testsToRun)
             {
+                if (!ShouldHandleCallback(testsToRun))
+                    return;
+
                 UpdateTestRunStarted(_jobId, CountTests(testsToRun));
             }
 
             public void RunFinished(ITestResultAdaptor result)
             {
+                if (!ShouldHandleCallback(result?.Test))
+                    return;
+
                 var job = BatchPersistence.GetJob(_jobId);
+                var noTestsMatched = false;
                 if (job != null && !IsTerminal(job.status))
                 {
                     CountResultOutcomes(result, out var totalTests, out var passedTests, out var failedTests, out var skippedTests, out var inconclusiveTests, out var otherTests);
                     var failedNames = new List<string>();
+                    var failedDetails = new List<object>();
                     CollectFailedTestNames(result, failedNames);
+                    CollectFailedTestDetails(result, failedDetails);
 
                     job.resultData["totalTests"] = totalTests;
                     job.resultData["passedTests"] = passedTests;
@@ -1363,7 +1485,19 @@ namespace UnitySkills
                     job.resultData["inconclusiveTests"] = inconclusiveTests;
                     job.resultData["otherTests"] = otherTests;
                     job.resultData["failedTestNames"] = failedNames;
+                    job.resultData["failedTestDetails"] = failedDetails;
                     BatchPersistence.UpsertJob(job);
+                    noTestsMatched = totalTests == 0 &&
+                                     !string.IsNullOrWhiteSpace(GetMetadataString(job, "filter"));
+                }
+
+                if (noTestsMatched)
+                {
+                    FailJob(_jobId,
+                        $"No tests matched filter '{GetMetadataString(job, "filter")}'.",
+                        "failed_no_tests_matched");
+                    CleanupTestRuntime(_jobId);
+                    return;
                 }
 
                 CompleteTestRun(_jobId);
@@ -1373,9 +1507,23 @@ namespace UnitySkills
             {
             }
 
+            public void OnError(string message)
+            {
+                if (!ShouldHandleCallback())
+                    return;
+
+                FailJob(_jobId,
+                    string.IsNullOrWhiteSpace(message) ? "Unity Test Runner failed to start." : message,
+                    "failed_test_runner");
+                CleanupTestRuntime(_jobId);
+            }
+
             public void TestFinished(ITestResultAdaptor result)
             {
-                if (result.Test.HasChildren)
+                if (!ShouldHandleCallback(result?.Test))
+                    return;
+
+                if (result?.Test == null || result.Test.IsSuite)
                     return;
 
                 string failedTestName = null;
@@ -1409,20 +1557,62 @@ namespace UnitySkills
                     failedTestName);
             }
 
+            private bool ShouldHandleCallback(ITestAdaptor test = null)
+            {
+                if (_acceptedRun)
+                    return true;
+
+                var job = BatchPersistence.GetJob(_jobId);
+                if (job == null || IsTerminal(job.status))
+                    return false;
+
+                var reconnectStartedAt = GetMetadataLong(job, "reconnectStartedAt", 0);
+                if (reconnectStartedAt > 0 &&
+                    DateTimeOffset.UtcNow.ToUnixTimeSeconds() - reconnectStartedAt > 30)
+                    return false;
+
+                var filter = GetMetadataString(job, "filter");
+                if (test != null && !string.IsNullOrWhiteSpace(filter) && !TestTreeMatchesFilter(test, filter))
+                    return false;
+
+                _acceptedRun = true;
+                if (job?.metadata != null && job.metadata.Remove("reconnectStartedAt"))
+                    BatchPersistence.UpsertJob(job);
+                return true;
+            }
+
+            private static bool TestTreeMatchesFilter(ITestAdaptor test, string filter)
+            {
+                if (test == null)
+                    return false;
+
+                if (!test.IsSuite)
+                {
+                    var pattern = $@"(^|\.){System.Text.RegularExpressions.Regex.Escape(filter)}($|\.)";
+                    return System.Text.RegularExpressions.Regex.IsMatch(test.FullName ?? string.Empty, pattern);
+                }
+
+                return (test.Children ?? Enumerable.Empty<ITestAdaptor>())
+                    .Any(child => TestTreeMatchesFilter(child, filter));
+            }
+
             private static int CountTests(ITestAdaptor test)
             {
-                if (!test.HasChildren)
+                if (test == null)
+                    return 0;
+
+                if (!test.IsSuite)
                     return 1;
 
-                return test.Children.Sum(CountTests);
+                return (test.Children ?? Enumerable.Empty<ITestAdaptor>()).Sum(CountTests);
             }
 
             private static void CollectFailedTestNames(ITestResultAdaptor result, List<string> failedNames)
             {
-                if (result == null || failedNames == null)
+                if (result?.Test == null || failedNames == null)
                     return;
 
-                if (!result.HasChildren)
+                if (!result.Test.IsSuite)
                 {
                     if (string.Equals(result.TestStatus.ToString(), "Failed", StringComparison.OrdinalIgnoreCase) &&
                         !string.IsNullOrWhiteSpace(result.FullName) &&
@@ -1436,6 +1626,33 @@ namespace UnitySkills
 
                 foreach (var child in result.Children ?? Enumerable.Empty<ITestResultAdaptor>())
                     CollectFailedTestNames(child, failedNames);
+            }
+
+            private static void CollectFailedTestDetails(ITestResultAdaptor result, List<object> failedDetails)
+            {
+                if (result?.Test == null || failedDetails == null)
+                    return;
+
+                if (!result.Test.IsSuite)
+                {
+                    if (string.Equals(result.TestStatus.ToString(), "Failed", StringComparison.OrdinalIgnoreCase))
+                    {
+                        failedDetails.Add(new Dictionary<string, object>
+                        {
+                            ["name"] = result.FullName ?? string.Empty,
+                            ["resultState"] = result.ResultState ?? string.Empty,
+                            ["message"] = result.Message ?? string.Empty,
+                            ["stackTrace"] = result.StackTrace ?? string.Empty,
+                            ["durationSeconds"] = result.Duration,
+                            ["output"] = result.Output ?? string.Empty
+                        });
+                    }
+
+                    return;
+                }
+
+                foreach (var child in result.Children ?? Enumerable.Empty<ITestResultAdaptor>())
+                    CollectFailedTestDetails(child, failedDetails);
             }
 
             private static void CountResultOutcomes(
@@ -1466,10 +1683,10 @@ namespace UnitySkills
                 ref int inconclusiveTests,
                 ref int otherTests)
             {
-                if (result == null)
+                if (result?.Test == null)
                     return;
 
-                if (!result.HasChildren)
+                if (!result.Test.IsSuite)
                 {
                     totalTests++;
                     switch (result.TestStatus.ToString())

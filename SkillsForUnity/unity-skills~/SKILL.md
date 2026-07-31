@@ -7,16 +7,24 @@ description: Automate the Unity Editor through a local REST API — create and e
 
 Use this skill when the user wants to automate the Unity Editor through the local UnitySkills REST server.
 
+## First Contact Checklist
+
+Before the first skill call in a session:
+
+1. **`GET /health`** — discover the server (ports `8090`–`8100`) and read `currentMode` (`"approval"` / `"auto"` / `"bypass"`), `panelApprovalRequired`, and `pendingCount`.
+2. **Branch on `currentMode`**: under `approval`, the first write call to any `FullAuto` skill returns `MODE_RESTRICTED` and you must run the grant protocol before it executes; under `auto`/`bypass`, writes execute directly (self-assess risk under `auto`). Full protocol and mode table: see "Operating Mode" → "Boot Handshake" below.
+3. Only then proceed to skill discovery (below) and calls.
+
 ## Schema: pick the cheapest layer that answers your question
 
-The schema is the canonical source for exact skill names, parameters, defaults, and returns — **but you rarely need the expensive layers**. Route by task shape (all layers are server-cached with ETag/304 and served off the main thread):
+The schema is the canonical source for exact skill names, parameters, defaults, and returns — **but you rarely need the expensive layers**. Route by task shape (all layers are server-cached with ETag/304 and served off the main thread; send `Accept-Encoding: gzip` and the server returns a cached gzip body, which shrinks the large layers by roughly 10x on the wire):
 
 - **Intent is specific** ("create a cube", "set this SO field") → `GET /skills/recommend?intent=<words>&topN=10&includeSchema=true` (~2-5 KB) returns scored candidates **with parameter schemas** — often the only lookup you need. If you already know the skill name, skip lookups entirely and go straight to the dryRun gate below.
 - **Task touches one or two areas** → directory first: `GET /skills?brief=1` (~19 KB ≈ 3.4K tokens — all 738 skill names grouped by module, names are self-describing `module_verb`) to lock the module(s), then `GET /skills/schema?category=<Category>` (~13–44 KB) for exact signatures. Typical session cost ≈ 10K tokens instead of 35K.
 - **Exploratory / cross-module / unsure what exists** → full awareness: `GET /skills?summary=1` (~143 KB ≈ 35K tokens — every skill's full description). The only layer with all descriptions at once; reach for it when the cheaper layers left you unsure, **not by default**.
 - **Full detail (rare)**: `GET /skills/schema` — full schema with exact parameter schemas (~`618 KB` ≈ 150K tokens, client-cached 300s + disk-cached under `~/.unity_skills/cache/` with ETag/304 revalidation, so short-lived CLI processes reuse it too). Only when you need many modules' exact signatures at once.
 
-Python helper shortcuts: `unity_skills.search_skills("keyword")` greps the cached summary **locally** and returns only matching entries — the 143 KB stays on disk, out of your context. `get_skills_summary()` / `get_skill_schema()` wrap the layers above with memory+disk caching.
+Python helper shortcuts — **these are `unity_skills.py` functions, not skill names. Never send one to `POST /skill/<name>`**; a helper name is not in the skill registry, so it can only ever come back as `SKILL_NOT_FOUND`. `unity_skills.search_skills("keyword")` greps the cached summary **locally** and returns only matching entries — the 143 KB stays on disk, out of your context. `unity_skills.get_skills_summary()` / `unity_skills.get_skill_schema()` wrap the layers above with memory+disk caching.
 
 **Before executing a skill — the dryRun gate (do not skip).** The lite/summary manifest is for *awareness* (picking the right skill), not for calling. Descriptions are informal (human-written, not a formal signature; some omit parameter hints) and parameter schemas are omitted. Before the first execution of any skill whose exact parameters you don't already hold in context, **dryRun it**: `POST /skill/<name>?mode=dryRun` with your best-guess args. The server validates parameters and, on error, returns `unknownParams` with `suggestions` (the correct parameter names) plus the full `parameters` schema — iterate until `valid: true`, then execute without `?mode=dryRun`. This is the mechanism that turns "awareness" into "correct operation steps"; never guess parameters from descriptions and never skip dryRun for a skill you have not yet called successfully this session. Mode values are strictly validated (v2.1.0+): a mistyped `?mode=` / `?dryRun=` value (e.g. `mode=dry_run`, `dryRun=1`) is rejected with `INVALID_MODE` and the request is **not** executed — a typo can never silently fall through to a real execution.
 
@@ -31,9 +39,13 @@ Python helper shortcuts: `unity_skills.search_skills("keyword")` greps the cache
 
 Use module `SKILL.md` files for routing guidance, guardrails, and minimal examples, not as the canonical source of exact signatures.
 
-Current snapshot: `738` REST skills, `52` functional source modules, `71` module documentation directories (`48` REST/module docs + `23` advisory docs), Unity `2022.3+`, default timeout `15 minutes`.
+Current snapshot: `776` REST skills, `54` functional source modules, `74` module documentation directories (`50` REST/module docs + `24` advisory docs), Unity `2022.3+`, default timeout `15 minutes`.
 
 Python helper: `unity-skills/scripts/unity_skills.py`
+
+## Unity CLI Cold Start (opt-in, v2.3+)
+
+If the REST server is unreachable at session start, check `<projectRoot>/Library/UnitySkills/cli_config.json` (helper: `unity_skills.get_cli_config()`). **Only if** it exists with `enabled: true` has the user bound the experimental Unity CLI in the panel — then read `skills/unity-cli/SKILL.md` and you may: triage liveness via the registry (`~/.unity_skills/registry.json` → is the project entry's `pid` alive? alive → it's a Domain Reload window, keep waiting; not alive → cold-start; note `unity status` alone is NOT authoritative — it misses editors without the Unity Pipeline package), launch the project without Unity Hub via `<cliPath> open "<projectPath>" --args -unityskills-coldstart` (the marker makes the plugin auto-start the REST server regardless of the Auto-start preference), then `unity_skills.wait_for_health()` until REST is ready. If the file is absent or `enabled: false`, Unity CLI is off for this project — ignore it completely and never suggest installing it unprompted.
 
 ## Operating Mode (v1.9.0+)
 
@@ -41,11 +53,15 @@ Operating mode is a **server-side permission gate**, configured in the Unity pan
 
 ### Boot Handshake
 
+> See "First Contact Checklist" near the top of this file for the condensed version of this step. Details below.
+
 On session start (or before the first skill call), call `GET /health` and read:
 
 - `currentMode` — `"approval"` / `"auto"` / `"bypass"`
 - `panelApprovalRequired` — only meaningful under Approval; selects the grant channel
 - `pendingCount` — outstanding grant requests
+- `mainThreadIdleMs` — milliseconds since Unity's main thread last ran the request loop. `/health` is answered off the main thread, so a fast reply with a **large** `mainThreadIdleMs` means *"the server is alive but Unity is busy"* (a long skill, an import, or a modal dialog) — not *"the server is down"*. Single/double digits is a healthy idle editor; seconds means keep waiting rather than restart. `-1` means the loop has not ticked yet. Add `?live=1` to force the request through the main-thread queue when you need strictly live values instead of a snapshot up to ~1s old.
+- `workflowRecoveryMode` — `true` when workflow history failed to load this session: rollback data is degraded and file-store cleanup is suspended until the history is cleared.
 
 ### Three Modes (aligned with Claude Code permission modes)
 
@@ -125,7 +141,7 @@ The REST surface (`738` skills) is partitioned by `[UnitySkill]` `Mode` and runt
 
 SemiAuto (read/query/analyze) skills are directly callable in every mode and span the modules below; use `GET /skills?category=<Category>` for the exact list (write skills in the same modules stay FullAuto):
 
-- **script** (read/list/get_info/find_in_file/get_compile_feedback) · **perception** (scene_analyze/context/health_check/find_hotspots, project_stack_detect) · **scene** (get_info/get_hierarchy/get_loaded/find_objects) · **editor** (get_context/state/selection/tags/layers) · **asset** (find/get_info) · **workflow** (list/session_*/plan — prefer workflow & batch helpers for planning/preview/jobs/rollback) · **debug + console** (check_compilation/get_errors/get_system_info/get_memory_info/get_logs)
+- **script** (`script_read` / `script_list` / `script_get_info` / `script_find_in_file` / `script_get_compile_feedback`) · **perception** (`scene_analyze` / `scene_context` / `scene_health_check` / `scene_find_hotspots` / `project_stack_detect` — the module is named perception but its skills carry the `scene_*` prefix) · **scene** (`scene_get_info` / `scene_get_hierarchy` / `scene_get_loaded` / `scene_find_objects`) · **editor** (`editor_get_context` / `editor_get_state` / `editor_get_selection` / `editor_get_tags` / `editor_get_layers`) · **asset** (`asset_find` / `asset_get_info`) · **workflow** (`workflow_list` / `workflow_session_*` / `workflow_plan` — prefer workflow & batch helpers for planning/preview/jobs/rollback) · **debug + console** (`debug_check_compilation` / `debug_get_errors` / `debug_get_system_info` / `debug_get_memory_info` / `debug_get_logs` / `console_get_logs`)
 - plus most modules' own info / list / get / find skills. **Advisory**: `20` design-only modules (no REST skills) — see Coding Reference Index below.
 
 ## Compilation Feedback, Events & Telemetry
@@ -146,6 +162,33 @@ Three read-only endpoints close the loop after a mutation — most useful across
 4. Script edits, define changes, package changes, some imports, and test template creation can trigger compilation or Domain Reload. Wait and retry on transient unavailability.
 5. `test_*` skills are async. They return a `jobId` and must be polled with `test_get_result(jobId)`.
 6. **Object location (Unity 6000.4+)** — on Unity 6000.4+ the legacy `instanceId` is reported as `0` and is no longer a reliable handle; locate GameObjects/components by `entityId` (the `entityId` field returned by object skills) instead. Locator priority is `entityId > instanceId > path > name`. Object skills accept a synthetic `entityId` parameter and return both `entityId` and `instanceId`; on Unity < 6000.4 the `instanceId` path still works unchanged.
+
+### Error Codes Quick Reference
+
+Every error response carries a top-level `errorCode` (plus `retryStrategy` / `retryAfterSeconds` when applicable — see `SkillErrorResponse.Build` in the server source). **The Python client (`unity_skills.py`) already auto-retries `COMPILING` / `RATE_LIMIT` / `QUEUE_FULL` / `SERVER_STOPPED`** using the server's own `retryAfterSeconds` — if you're calling through `unity_skills.call_skill(...)` you normally never see these codes at all; the table below is for building a custom client or interpreting a final failure after retries are exhausted.
+
+| `errorCode` | HTTP | Meaning | Action |
+|---|---|---|---|
+| `COMPILING` | 503 | Unity is compiling or mid-Domain-Reload — expected right after script/define/package edits | Wait `retryAfterSeconds` (5s, 8s if a reload is pending) and retry. Auto-retried by the Python client |
+| `RATE_LIMIT` | 429 | Too many requests/sec against the admission limiter | Wait `retryAfterSeconds` (1s) and retry. Auto-retried by the Python client |
+| `QUEUE_FULL` | 503 | Too many requests already pending on the main-thread queue | Wait `retryAfterSeconds` (2s) and retry. Auto-retried by the Python client |
+| `SERVER_STOPPED` | 503 | Server is stopping/stopped (manual stop or reload teardown) | Wait `retryAfterSeconds` (5s) for it to come back and retry. Auto-retried by the Python client |
+| `TIMEOUT` | 504 | Main thread didn't respond within the request timeout | Wait (5s if a Domain Reload is pending, else 10s) and retry; if it persists, check for a stuck modal dialog or long-running operation in the Editor |
+| `BODY_TOO_LARGE` | 413 | POST body exceeded the server's max size | Not retryable as-is — shrink the request (e.g. split a large `/skills/batch` into smaller batches) |
+| `MODE_RESTRICTED` | 200 (`status:"error"` in the body) | Approval mode: the skill is `FullAuto` and needs a user grant | Follow the Approval Mode Grant Protocol above — do not retry the raw call |
+| `MODE_FORBIDDEN` | 200 (`status:"error"` in the body) | Skill is auto-classified `NeverInSemi` (Delete/PlayMode/Reload/high-risk) and the current mode isn't Bypass | Tell the user it needs Bypass mode or an Allowlist entry — do not attempt the grant flow |
+
+**Business errors** — a skill ran but refused the request. All of these come back as HTTP `200` with `status:"error"` in the body, and carry `retryStrategy` plus `suggestedFixes`/`relatedSkills` naming the skill to call next. None is auto-retried by the Python client: they need a corrected call, not a wait.
+
+| `errorCode` | `retryStrategy` | Meaning | Action |
+|---|---|---|---|
+| `TARGET_NOT_FOUND` | `find_target_and_retry` | The GameObject / asset / component the skill was pointed at does not exist | Locate it first (`gameobject_find`, `scene_get_hierarchy`, `asset_find`, `component_list` — `relatedSkills` says which), then retry with the `entityId` or exact path it returns |
+| `MISSING_PACKAGE` | `install_and_retry` | The skill's optional package (ProBuilder / XR / Netcode / DOTween / YooAsset / URP …) is not installed | Install it with `package_install` (the message names the package id), wait out the Domain Reload, then retry |
+| `MISSING_PARAM` | `fix_and_retry` | A required parameter was omitted | Add the parameter named in the message; `POST /skill/<name>?mode=dryRun` returns the full schema without executing |
+| `SEMANTIC_INVALID` | `fix_and_retry` | A parameter was supplied but rejected — out of range, unknown enum value, wrong asset type, or the target already exists | Read the accepted range/values from the message, correct the args, dryRun, retry |
+| `SKILL_ERROR` | `abort` | A genuine runtime failure inside the skill (I/O error, reflection failure, unusable editor state) | Do not retry blind — report the message to the user or pick another approach |
+
+> These codes are derived at the routing layer, so they apply across all skills, including ones whose own error text is a bare sentence. A skill may also declare `errorCode` / `retryStrategy` / `suggestedFixes` / `relatedSkills` on its error object, in which case those are passed through verbatim and override the derivation.
 
 ## Coding Reference Index
 
@@ -182,7 +225,7 @@ Before writing or refactoring Unity code, **load the relevant advisory module fi
 | `yooasset-design` | `ResourcePackage` / `AssetHandle` / `Downloader` / `FileSystem` / `AssetBundleBuilder` |
 | `yaml-editing` | Hand-editing `.unity` / `.prefab` / `.asset` / `.meta` / ProjectSettings YAML when REST cannot reach (compile failure, `.meta`, hidden ProjectSettings fields, merge conflict) |
 
-**Unity API reference**: `references/*.md` — official API grouped by topic (`2d`, `3d`, `animation`, `assets`, `audio`, `editor`, `networking`, `physics`, `rendering`, `scripting`, `shaders`, `ui`, `xr`, …). Read the relevant file to ground exact signatures instead of guessing.
+**Unity official doc URL index**: `references/*.md` — a flat index of official `docs.unity3d.com` URLs grouped by topic (`2d`, `3d`, `animation`, `assets`, `audio`, `editor`, `networking`, `physics`, `rendering`, `scripting`, `shaders`, `ui`, `xr`, …). Each file contains only page titles and links — **no code, no signatures**. Use these when you need the official manual page for a topic (to fetch or hand to the user); for exact skill signatures use dryRun/schema (above), not this directory. See `references/README.md` for per-file sizes before opening one — `other.md` alone is ~214 KB.
 
 Load any module via the index: `unity-skills/skills/<module>/SKILL.md`.
 

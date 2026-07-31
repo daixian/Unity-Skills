@@ -242,7 +242,8 @@ namespace UnitySkills
         [UnitySkill("cleaner_delete_assets", "Delete specified assets. Step 1: Call without confirmToken to preview. Step 2: Call with confirmToken to execute.", TracksWorkflow = true,
             Category = SkillCategory.Cleaner, Operation = SkillOperation.Delete,
             Tags = new[] { "cleaner", "delete", "assets", "confirm" },
-            Outputs = new[] { "action", "deletedCount", "totalMB", "confirmToken", "assetsToDelete" })]
+            Outputs = new[] { "action", "deletedCount", "totalMB", "confirmToken", "assetsToDelete" },
+            RiskLevel = "high")]
         public static object CleanerDeleteAssets(
             string[] paths = null,
             string confirmToken = null)
@@ -255,7 +256,6 @@ namespace UnitySkills
                     return new { success = false, error = "Invalid or expired confirmToken. Please call again without confirmToken to get a new preview." };
                 }
 
-                // Check if token is expired (5 minutes)
                 if ((System.DateTime.Now - pending.CreatedAt).TotalMinutes > 5)
                 {
                     _pendingDeletes.Remove(confirmToken);
@@ -273,15 +273,14 @@ namespace UnitySkills
                     }
 
                     var existed = File.Exists(path) || Directory.Exists(path);
+                    bool deleted = false;
                     if (existed)
                     {
-                        // Workflow snapshot comment normalized.
-                        var asset = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(path);
-                        if (asset != null) WorkflowManager.SnapshotObject(asset);
-                        AssetDatabase.DeleteAsset(path);
-                        deletedCount++;
+                        // One-shot delete: backs up file (+ .meta) to the store and records a Deleted snapshot.
+                        deleted = WorkflowManager.DeleteAssetToTrash(path);
+                        if (deleted) deletedCount++;
                     }
-                    deletedResults.Add(new { path, deleted = existed });
+                    deletedResults.Add(new { path, deleted });
                 }
 
                 _pendingDeletes.Remove(confirmToken);
@@ -335,7 +334,6 @@ namespace UnitySkills
                 });
             }
 
-            // Generate confirmation token
             var token = System.Guid.NewGuid().ToString("N").Substring(0, 8);
             _pendingDeletes[token] = new PendingDeleteOperation
             {
@@ -344,7 +342,6 @@ namespace UnitySkills
                 TotalBytes = totalBytes
             };
 
-            // Clean up old tokens
             var expiredTokens = _pendingDeletes.Where(kv => (System.DateTime.Now - kv.Value.CreatedAt).TotalMinutes > 5).Select(kv => kv.Key).ToList();
             foreach (var expired in expiredTokens) _pendingDeletes.Remove(expired);
 
@@ -468,7 +465,8 @@ namespace UnitySkills
         [UnitySkill("cleaner_delete_empty_folders", "Delete all empty folders", TracksWorkflow = true,
             Category = SkillCategory.Cleaner, Operation = SkillOperation.Delete,
             Tags = new[] { "cleaner", "delete", "empty", "folders" },
-            Outputs = new[] { "deleted", "total" })]
+            Outputs = new[] { "deleted", "total" },
+            RiskLevel = "medium")]
         public static object CleanerDeleteEmptyFolders(string searchPath = "Assets")
         {
             var empty = new List<string>();
@@ -476,7 +474,9 @@ namespace UnitySkills
             int deleted = 0;
             foreach (var folder in empty.OrderByDescending(f => f.Length))
             {
-                if (AssetDatabase.DeleteAsset(folder)) deleted++;
+                // Folder branch of DeleteAssetToTrash records a metadata-only Deleted snapshot
+                // (undo re-creates the empty folder) and removes it via AssetDatabase.DeleteAsset.
+                if (WorkflowManager.DeleteAssetToTrash(folder)) deleted++;
             }
             AssetDatabase.Refresh();
             return new { success = true, deleted, total = empty.Count };

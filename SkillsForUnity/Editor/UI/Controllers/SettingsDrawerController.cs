@@ -56,10 +56,16 @@ namespace UnitySkills
         private Button        _allowlistAddBtn;
         private Button        _viewAuditBtn;
 
+        private Label  _cliGroupTitle;
+        private Label  _cliHint;
+        private Button _cliOpenBtn;
+
         // Server group
         private Label           _serverGroupTitle;
         private Toggle          _autoStartToggle;
         private Label           _autoStartHint;
+        private Toggle          _startOnLaunchToggle;
+        private Label           _startOnLaunchHint;
         private Label           _portLabel;
         private DropdownField   _portDropdown;
         private Label           _timeoutLabel;
@@ -119,7 +125,6 @@ namespace UnitySkills
             // Shortcuts 节：独立控制器接管捕获态机与冲突检测，抽屉仅做组装与生命周期转发。
             _shortcutsController = new ShortcutsSettingsController(_drawerContainer);
 
-            // Click on mask closes the drawer
             if (_drawerMask != null)
             {
                 _drawerMask.RegisterCallback<ClickEvent>(_ => Close());
@@ -174,9 +179,15 @@ namespace UnitySkills
             _allowlistAddBtn     = _drawerContainer.Q<Button>("perm-allowlist-add-btn");
             _viewAuditBtn        = _drawerContainer.Q<Button>("perm-view-audit-btn");
 
+            _cliGroupTitle = _drawerContainer.Q<Label>("group-cli-title");
+            _cliHint       = _drawerContainer.Q<Label>("cli-drawer-hint");
+            _cliOpenBtn    = _drawerContainer.Q<Button>("cli-open-setup-btn");
+
             _serverGroupTitle = _drawerContainer.Q<Label>("group-server-title");
             _autoStartToggle  = _drawerContainer.Q<Toggle>("autostart-toggle");
             _autoStartHint    = _drawerContainer.Q<Label>("autostart-hint");
+            _startOnLaunchToggle = _drawerContainer.Q<Toggle>("start-on-launch-toggle");
+            _startOnLaunchHint   = _drawerContainer.Q<Label>("start-on-launch-hint");
             _portLabel        = _drawerContainer.Q<Label>("port-label");
             _portDropdown     = _drawerContainer.Q<DropdownField>("port-dropdown");
             _timeoutLabel     = _drawerContainer.Q<Label>("timeout-label");
@@ -204,7 +215,6 @@ namespace UnitySkills
         {
             if (_closeBtn != null) _closeBtn.clicked += Close;
 
-            // Permissions: 用 dropdown 替代原来的三个 radio toggle。
             // index 由 _modeOrder 反查为枚举，避免依赖本地化文本。
             if (_modeDropdown != null)
                 _modeDropdown.RegisterValueChangedCallback(evt =>
@@ -232,11 +242,21 @@ namespace UnitySkills
             if (_viewAuditBtn != null)
                 _viewAuditBtn.clicked += () => UnitySkillsAuditWindow.ShowWindow();
 
+            if (_cliOpenBtn != null)
+                _cliOpenBtn.clicked += () => UnityCliWindow.ShowWindow();
+
             if (_autoStartToggle != null)
                 _autoStartToggle.RegisterValueChangedCallback(evt =>
                 {
                     if (evt.newValue != SkillsHttpServer.AutoStart)
                         SkillsHttpServer.AutoStart = evt.newValue;
+                });
+
+            if (_startOnLaunchToggle != null)
+                _startOnLaunchToggle.RegisterValueChangedCallback(evt =>
+                {
+                    if (evt.newValue != SkillsHttpServer.StartOnEditorLaunch)
+                        SkillsHttpServer.StartOnEditorLaunch = evt.newValue;
                 });
 
             if (_portDropdown != null)
@@ -325,6 +345,7 @@ namespace UnitySkills
             }
 
             if (_autoStartToggle != null) _autoStartToggle.value = SkillsHttpServer.AutoStart;
+            if (_startOnLaunchToggle != null) _startOnLaunchToggle.value = SkillsHttpServer.StartOnEditorLaunch;
             if (_timeoutField   != null) _timeoutField.value     = SkillsHttpServer.RequestTimeoutMinutes;
             if (_keepaliveField != null) _keepaliveField.value   = SkillsHttpServer.KeepAliveIntervalSeconds;
             if (_confirmToggle  != null) _confirmToggle.value    = ConfirmationTokenService.RequireConfirmation;
@@ -335,6 +356,8 @@ namespace UnitySkills
         {
             // 每次打开重建 Shortcuts 行，拉取最新绑定（覆盖 Edit ▸ Shortcuts 外部改动）。
             _shortcutsController?.Refresh();
+            // 绑定状态可能在 UnityCliWindow 里刚变过，开抽屉时取最新。
+            RefreshCliGroup();
 
             if (_drawerContainer != null) _drawerContainer.AddToClassList("open");
             if (_drawerMask != null)
@@ -392,6 +415,8 @@ namespace UnitySkills
                 _viewAuditBtn.text = PermissionUiHelpers.L("perm_view_audit_log",
                     "View Audit Log", "查看审计日志");
 
+            RefreshCliGroup();
+
             // Pending / Allowlist titles include counts, so rebuild via RefreshPermissionsUi
             // to pick up the new language strings together with the live data.
             RefreshPermissionsUi();
@@ -402,6 +427,8 @@ namespace UnitySkills
 
             if (_autoStartToggle != null) _autoStartToggle.label = SkillsLocalization.Get("auto_restart");
             if (_autoStartHint   != null) _autoStartHint.text    = SkillsLocalization.Get("auto_restart_hint");
+            if (_startOnLaunchToggle != null) _startOnLaunchToggle.label = SkillsLocalization.Get("start_on_editor_launch");
+            if (_startOnLaunchHint   != null) _startOnLaunchHint.text    = SkillsLocalization.Get("start_on_editor_launch_hint");
 
             if (_portLabel       != null) _portLabel.text     = SkillsLocalization.Get("drawer_port_label");
             if (_timeoutLabel    != null) _timeoutLabel.text  = SkillsLocalization.Get("drawer_timeout_label");
@@ -470,6 +497,34 @@ namespace UnitySkills
         /// 同步三类权限 UI：模式 toggles、Approval 设置 row、Pending/Granted 列表。
         /// 由 OnChanged 事件、本类初始化、Localization 切换调用。
         /// </summary>
+        /// <summary>
+        /// Unity CLI 组：标题/按钮文案 + 绑定状态提示。绑定发生在 UnityCliWindow，
+        /// 抽屉每次本地化刷新（含 Open）时顺带取一次最新状态即可，无需轮询。
+        /// </summary>
+        private void RefreshCliGroup()
+        {
+            if (_cliGroupTitle != null)
+                _cliGroupTitle.text = "Unity CLI";
+            if (_cliOpenBtn != null)
+            {
+                _cliOpenBtn.text = PermissionUiHelpers.L("cli_setup_entry",
+                    "Unity CLI Setup…", "Unity CLI 配置…");
+                _cliOpenBtn.tooltip = PermissionUiHelpers.L("cli_setup_entry_tip",
+                    "Detect / bind the experimental Unity CLI to enable cold start without Unity Hub",
+                    "检测 / 绑定实验性 Unity CLI，启用免 Unity Hub 冷启动");
+            }
+            if (_cliHint != null)
+            {
+                _cliHint.text = UnityCliService.IsBound
+                    ? PermissionUiHelpers.L("cli_drawer_hint_bound",
+                        "Bound — AI agents may cold-start this project via Unity CLI.",
+                        "已绑定 —— AI Agent 可通过 Unity CLI 冷启动本项目。")
+                    : PermissionUiHelpers.L("cli_drawer_hint_unbound",
+                        "Not bound — open setup to detect the CLI and bind this project.",
+                        "未绑定 —— 打开配置面板检测 CLI 并绑定本项目。");
+            }
+        }
+
         private void RefreshPermissionsUi()
         {
             if (_drawerContainer == null) return;
@@ -610,14 +665,6 @@ namespace UnitySkills
             return card;
         }
 
-        /// <summary>
-        /// "+ Add Skill" 按钮回调：弹出按 Category 分组的 GenericMenu，让用户手动把 skill
-        /// 加入白名单。高危 skill（RiskLevel=high / Delete / PlayMode / Reload）会先弹
-        /// 二次确认 dialog，避免一键放行严重操作。
-        ///
-        /// 高危判定特意在 UI 层重做（而不是反射 SkillsModeManager.IsForbiddenInSemi），
-        /// 保持 ModeManager 的可见性边界不被 UI 反向污染。
-        /// </summary>
         /// <summary>
         /// 打开 AllowlistPickerWindow —— 支持搜索、按 Category 分组勾选、整组一键选中、
         /// 提交时合并高危确认。窗口自负责调 AddToAllowlist；本控制器在 OnChanged 链路上自动刷新列表。

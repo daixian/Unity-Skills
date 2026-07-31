@@ -14,6 +14,7 @@ namespace UnitySkills
     /// <summary>
     /// Unity Package Manager API 封装
     /// </summary>
+    [InitializeOnLoad]
     public static class PackageManagerHelper
     {
         private const string PrefKeyAutoInstallPackagesOnStartup = "UnitySkills_AutoInstallPackagesOnStartup";
@@ -49,6 +50,44 @@ namespace UnitySkills
             set => EditorPrefs.SetBool(PrefKeyAutoInstallPackagesOnStartup, value);
         }
 
+        static PackageManagerHelper()
+        {
+            try
+            {
+                EnsureTestable();
+                EditorApplication.delayCall += InitializePackageList;
+            }
+            catch (Exception ex)
+            {
+                SkillsLogger.LogError("PackageManagerHelper init failed: " + ex.Message);
+            }
+        }
+
+        private static void InitializePackageList()
+        {
+            try
+            {
+                RefreshPackageList(success =>
+                {
+                    if (success && AutoInstallPackagesOnStartup)
+                        AutoInstallCinemachineIfNeeded();
+                });
+            }
+            catch (Exception ex)
+            {
+                SkillsLogger.LogError("PackageManagerHelper delayed init failed: " + ex.Message);
+            }
+        }
+
+        public static bool EnsurePackageListRefresh()
+        {
+            if (_installedPackages != null)
+                return true;
+            if (!_isRefreshing)
+                RefreshPackageList();
+            return false;
+        }
+
         /// <summary>
         /// 刷新已安装包列表
         /// </summary>
@@ -62,7 +101,23 @@ namespace UnitySkills
             _isRefreshing = true;
             _currentOperation = "refresh";
             _currentPackageId = "(package_list)";
-            _listRequest = Client.List(true);
+            // Include resolved transitive dependencies. Cinemachine 3, for example, brings
+            // Splines indirectly and skills must still recognize it as installed.
+            try
+            {
+                _listRequest = Client.List(offlineMode: true, includeIndirectDependencies: true);
+            }
+            catch (Exception ex)
+            {
+                _isRefreshing = false;
+                _currentOperation = null;
+                _currentPackageId = null;
+                var callbacks = _pendingListCallbacks;
+                _pendingListCallbacks = null;
+                SkillsLogger.LogError("Package list refresh failed to start: " + ex.Message);
+                callbacks?.Invoke(false);
+                return;
+            }
             EditorApplication.update -= OnListProgress;
             EditorApplication.update += OnListProgress;
         }
@@ -96,7 +151,9 @@ namespace UnitySkills
         /// </summary>
         public static bool IsPackageInstalled(string packageId)
         {
-            return _installedPackages != null && _installedPackages.ContainsKey(packageId);
+            if (_installedPackages != null && _installedPackages.ContainsKey(packageId))
+                return true;
+            return ResolveDirectly(packageId) != null;
         }
 
         /// <summary>
@@ -106,7 +163,31 @@ namespace UnitySkills
         {
             if (_installedPackages != null && _installedPackages.TryGetValue(packageId, out var info))
                 return info.version;
-            return null;
+            return ResolveDirectly(packageId)?.version;
+        }
+
+        /// <summary>
+        /// Synchronous single-package lookup, used when the cached list is not up yet.
+        /// <see cref="RefreshPackageList"/> is asynchronous and restarts after every domain reload,
+        /// so the first call of a session lands in the window where the cache is still null. Without
+        /// this fallback a skill would report a package as installed (a check that succeeded some
+        /// other way, e.g. a version define) while its version came back null — an internally
+        /// inconsistent answer that also made version gates silently evaluate to "unknown".
+        /// </summary>
+        private static PkgInfo ResolveDirectly(string packageId)
+        {
+            if (string.IsNullOrEmpty(packageId)) return null;
+            try
+            {
+                var info = PkgInfo.FindForAssetPath($"Packages/{packageId}");
+                return info != null && string.Equals(info.name, packageId, StringComparison.Ordinal)
+                    ? info
+                    : null;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         /// <summary>
@@ -252,39 +333,6 @@ namespace UnitySkills
             var version = GetInstalledVersion(CinemachinePackageId);
             var isV3 = version != null && version.StartsWith("3.");
             return (true, version, isV3);
-        }
-
-        /// <summary>
-        /// 初始化（首次加载时刷新包列表并自动安装 Cinemachine）
-        /// </summary>
-        [InitializeOnLoadMethod]
-        private static void Initialize()
-        {
-            try
-            {
-                EnsureTestable();
-
-                // 延迟执行，等待 Package Manager 完成初始化
-                EditorApplication.delayCall += () =>
-                {
-                    try
-                    {
-                        RefreshPackageList(success =>
-                        {
-                            if (success && AutoInstallPackagesOnStartup)
-                                AutoInstallCinemachineIfNeeded();
-                        });
-                    }
-                    catch (System.Exception ex)
-                    {
-                        UnityEngine.Debug.LogError("[UnitySkills] PackageManagerHelper delayed init failed: " + ex);
-                    }
-                };
-            }
-            catch (System.Exception ex)
-            {
-                UnityEngine.Debug.LogError("[UnitySkills] PackageManagerHelper init failed: " + ex);
-            }
         }
 
         private const string PackageName = "com.besty.unity-skills";
